@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  # PostgreSQL数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: dns-max-postgres-dev
+    environment:
+      POSTGRES_DB: dns_max_dev
+      POSTGRES_USER: dns_max_user
+      POSTGRES_PASSWORD: dns_max_password
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dns_max_user -d dns_max_dev"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: dns-max-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+
+networks:
+  default:
+    name: dns-max-dev-network
