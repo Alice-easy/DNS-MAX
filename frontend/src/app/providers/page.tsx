@@ -85,17 +85,23 @@ export default function ProvidersPage() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* 页面标题和操作 */}
-        <div className="flex justify-between items-center">
+        <div className="space-y-4 sm:space-y-0 sm:flex sm:justify-between sm:items-center px-2 sm:px-0">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">DNS服务商管理</h1>
-            <p className="mt-2 text-gray-600">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">DNS服务商管理</h1>
+            <p className="mt-2 text-sm sm:text-base text-gray-600">
               管理您的DNS服务商配置
             </p>
           </div>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            添加服务商
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <Button className="w-full sm:w-auto touch-manipulation">
+              <Plus className="h-4 w-4 mr-2" />
+              添加服务商
+              <kbd className="hidden lg:inline ml-2 px-2 py-0.5 text-xs bg-gray-100 border border-gray-300 rounded">Ctrl+N</kbd>
+            </Button>
+            <Button variant="outline" className="hidden lg:inline-flex w-auto touch-manipulation">
+              批量导入
+            </Button>
+          </div>
         </div>
 
         {/* 错误提示 */}
@@ -123,7 +129,7 @@ export default function ProvidersPage() {
                 <p className="text-gray-500 mb-6">
                   您还没有配置任何DNS服务商。添加服务商后，您就可以管理域名和DNS记录了。
                 </p>
-                <Button>
+                <Button className="touch-manipulation min-h-[44px]">
                   <Plus className="h-4 w-4 mr-2" />
                   添加第一个服务商
                 </Button>
@@ -131,7 +137,7 @@ export default function ProvidersPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {providers.map((provider) => (
               <Card key={provider.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
@@ -165,15 +171,15 @@ export default function ProvidersPage() {
                     </div>
 
                     <div className="flex space-x-2 pt-4">
-                      <Button variant="outline" size="sm" className="flex-1">
+                      <Button variant="outline" size="sm" className="flex-1 touch-manipulation min-h-[36px]">
                         <Edit className="h-4 w-4 mr-1" />
-                        编辑
+                        <span className="hidden sm:inline">编辑</span>
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleDelete(provider.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 touch-manipulation min-h-[36px] px-3"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
