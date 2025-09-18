@@ -135,7 +135,6 @@ curl http://localhost:8000/health
 ## 📖 文档
 
 - [部署指南](./DEPLOYMENT.md) - 详细的部署说明
-- [API 文档](http://localhost:8000/docs) - 完整的 API 参考
 - [环境配置](./ENVIRONMENT.md) - 环境变量配置说明
 
 ## 🔧 故障排除
