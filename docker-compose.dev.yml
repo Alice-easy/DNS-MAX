@@ -1,42 +1,451 @@
 version: "3.8"
 
+# ===========================================
+# DNS Max 开发环境 Docker Compose 配置
+# ===========================================
+# 此配置文件专为本地开发环境设计
+# 仅包含基础的数据库和缓存服务，后端和前端在本地运行
+
 services:
-  # PostgreSQL数据库
+  # ===========================================
+  # PostgreSQL 数据库服务 (开发环境)
+  # ===========================================
   postgres:
     image: postgres:15-alpine
     container_name: dns-max-postgres-dev
+    restart: unless-stopped
+
+    # 开发环境数据库配置
     environment:
       POSTGRES_DB: dns_max_dev
       POSTGRES_USER: dns_max_user
       POSTGRES_PASSWORD: dns_max_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+      PGDATA: /var/lib/postgresql/data/pgdata
+
+    # 数据卷挂载
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./postgres/logs:/var/log/postgresql
+
+    # 网络端口（开发环境需要本地访问）
     ports:
       - "5432:5432"
+
+    # 资源限制（开发环境较宽松）
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.25"
+
+    # 健康检查
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dns_max_user -d dns_max_dev"]
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 30s
 
-  # Redis缓存
+    # 开发环境优化的启动命令
+    command: >
+      postgres
+      -c log_statement=all
+      -c log_duration=on
+      -c log_min_duration_statement=0
+      -c log_checkpoints=on
+      -c log_connections=on
+      -c log_disconnections=on
+      -c log_lock_waits=on
+      -c log_temp_files=0
+      -c checkpoint_segments=32
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c shared_buffers=128MB
+      -c max_connections=50
+
+    # 网络配置
+    networks:
+      - dns-max-dev-network
+
+    # 开发环境标签
+    labels:
+      - "com.dns-max.env=development"
+      - "com.dns-max.service=postgres"
+
+  # ===========================================
+  # Redis 缓存服务 (开发环境)
+  # ===========================================
   redis:
     image: redis:7-alpine
     container_name: dns-max-redis-dev
+    restart: unless-stopped
+
+    # 网络端口（开发环境需要本地访问）
     ports:
       - "6379:6379"
+
+    # 数据卷挂载
     volumes:
       - redis_dev_data:/data
+      - ./redis/logs:/var/log/redis
+
+    # 资源限制（开发环境较宽松）
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
+        reservations:
+          memory: 128M
+          cpus: "0.125"
+
+    # 健康检查
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 20s
 
+    # 开发环境Redis配置
+    command: >
+      redis-server
+      --maxmemory 128mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1 300 10 60 10000
+      --appendonly yes
+      --appendfsync everysec
+      --tcp-keepalive 300
+      --timeout 0
+      --tcp-backlog 511
+      --databases 16
+      --loglevel verbose
+      --logfile /var/log/redis/redis.log
+
+    # 网络配置
+    networks:
+      - dns-max-dev-network
+
+    # 开发环境标签
+    labels:
+      - "com.dns-max.env=development"
+      - "com.dns-max.service=redis"
+
+  # ===========================================
+  # MailHog 邮件测试服务 (开发环境)
+  # ===========================================
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: dns-max-mailhog-dev
+    restart: unless-stopped
+
+    # 网络端口
+    ports:
+      - "1025:1025" # SMTP端口
+      - "8025:8025" # Web界面端口
+
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.1"
+        reservations:
+          memory: 64M
+          cpus: "0.05"
+
+    # 网络配置
+    networks:
+      - dns-max-dev-network
+
+    # 开发环境标签
+    labels:
+      - "com.dns-max.env=development"
+      - "com.dns-max.service=mailhog"
+
+    # 健康检查
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8025",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ===========================================
+  # pgAdmin 数据库管理工具 (可选)
+  # ===========================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: dns-max-pgadmin-dev
+    restart: unless-stopped
+
+    # 环境变量配置
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@localhost
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+
+    # 网络端口
+    ports:
+      - "5050:80"
+
+    # 数据卷挂载
+    volumes:
+      - pgadmin_dev_data:/var/lib/pgadmin
+      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
+
+    # 依赖服务
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
+        reservations:
+          memory: 128M
+          cpus: "0.125"
+
+    # 网络配置
+    networks:
+      - dns-max-dev-network
+
+    # 仅在需要时启动
+    profiles:
+      - tools
+
+    # 开发环境标签
+    labels:
+      - "com.dns-max.env=development"
+      - "com.dns-max.service=pgadmin"
+
+  # ===========================================
+  # Redis Commander Redis管理工具 (可选)
+  # ===========================================
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: dns-max-redis-commander-dev
+    restart: unless-stopped
+
+    # 环境变量配置
+    environment:
+      REDIS_HOSTS: local:redis:6379
+      HTTP_USER: admin
+      HTTP_PASSWORD: admin123
+
+    # 网络端口
+    ports:
+      - "8081:8081"
+
+    # 依赖服务
+    depends_on:
+      redis:
+        condition: service_healthy
+
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.1"
+        reservations:
+          memory: 64M
+          cpus: "0.05"
+
+    # 网络配置
+    networks:
+      - dns-max-dev-network
+
+    # 仅在需要时启动
+    profiles:
+      - tools
+
+    # 开发环境标签
+    labels:
+      - "com.dns-max.env=development"
+      - "com.dns-max.service=redis-commander"
+
+  # ===========================================
+  # Jaeger 链路追踪 (可选)
+  # ===========================================
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: dns-max-jaeger-dev
+    restart: unless-stopped
+
+    # 环境变量配置
+    environment:
+      COLLECTOR_ZIPKIN_HTTP_PORT: 9411
+
+    # 网络端口
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "14268:14268" # Jaeger收集器
+      - "14250:14250" # Jaeger gRPC
+      - "9411:9411" # Zipkin兼容端口
+
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
+        reservations:
+          memory: 128M
+          cpus: "0.125"
+
+    # 网络配置
+    networks:
+      - dns-max-dev-network
+
+    # 仅在需要时启动
+    profiles:
+      - monitoring
+
+    # 开发环境标签
+    labels:
+      - "com.dns-max.env=development"
+      - "com.dns-max.service=jaeger"
+
+# ===========================================
+# 数据卷定义
+# ===========================================
 volumes:
+  # PostgreSQL 开发数据
   postgres_dev_data:
-  redis_dev_data:
+    driver: local
+    labels:
+      - "com.dns-max.env=development"
+      - "com.dns-max.data=postgres"
 
+  # Redis 开发数据
+  redis_dev_data:
+    driver: local
+    labels:
+      - "com.dns-max.env=development"
+      - "com.dns-max.data=redis"
+
+  # pgAdmin 数据
+  pgadmin_dev_data:
+    driver: local
+    labels:
+      - "com.dns-max.env=development"
+      - "com.dns-max.data=pgadmin"
+
+# ===========================================
+# 网络定义
+# ===========================================
 networks:
-  default:
+  # 开发环境网络
+  dns-max-dev-network:
+    driver: bridge
     name: dns-max-dev-network
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
+    labels:
+      - "com.dns-max.env=development"
+      - "com.dns-max.network=dev"
+# ===========================================
+# 开发环境使用指南
+# ===========================================
+#
+# 1. 启动基础服务（数据库和缓存）:
+#    docker-compose -f docker-compose.dev.yml up -d
+#
+# 2. 启动包含管理工具的完整开发环境:
+#    docker-compose -f docker-compose.dev.yml --profile tools up -d
+#
+# 3. 启动包含监控的开发环境:
+#    docker-compose -f docker-compose.dev.yml --profile monitoring up -d
+#
+# 4. 启动所有开发工具:
+#    docker-compose -f docker-compose.dev.yml --profile tools --profile monitoring up -d
+#
+# 5. 查看服务状态:
+#    docker-compose -f docker-compose.dev.yml ps
+#
+# 6. 查看日志:
+#    docker-compose -f docker-compose.dev.yml logs -f [service_name]
+#
+# 7. 停止所有服务:
+#    docker-compose -f docker-compose.dev.yml down
+#
+# 8. 清理开发数据:
+#    docker-compose -f docker-compose.dev.yml down -v
+#
+# ===========================================
+# 开发环境访问端点
+# ===========================================
+#
+# 数据库连接:
+#   Host: localhost
+#   Port: 5432
+#   Database: dns_max_dev
+#   Username: dns_max_user
+#   Password: dns_max_password
+#
+# Redis连接:
+#   Host: localhost
+#   Port: 6379
+#   Database: 0
+#
+# 管理工具:
+#   pgAdmin: http://localhost:5050 (admin@localhost / admin123)
+#   Redis Commander: http://localhost:8081 (admin / admin123)
+#   MailHog: http://localhost:8025
+#   Jaeger: http://localhost:16686
+#
+# 后端开发服务器:
+#   URL: http://localhost:8000
+#   API文档: http://localhost:8000/docs
+#
+# 前端开发服务器:
+#   URL: http://localhost:3000
+#
+# ===========================================
+# 开发环境配置说明
+# ===========================================
+#
+# 1. 数据库配置：
+#    - 启用了详细的SQL日志记录
+#    - 较小的连接池以节省资源
+#    - 优化了检查点设置以提高开发体验
+#
+# 2. Redis配置：
+#    - 启用了数据持久化
+#    - 详细的日志记录
+#    - 较小的内存限制
+#
+# 3. 邮件测试：
+#    - 使用MailHog捕获所有发送的邮件
+#    - SMTP服务器: localhost:1025
+#    - Web界面: localhost:8025
+#
+# 4. 开发工具：
+#    - pgAdmin用于数据库管理
+#    - Redis Commander用于Redis管理
+#    - Jaeger用于链路追踪调试
+#
+# 5. 网络配置：
+#    - 所有服务在同一个开发网络中
+#    - 端口映射到本地以便开发调试
+#
+# ===========================================
