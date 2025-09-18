@@ -12,7 +12,7 @@
 
 一个现代化的多 DNS 服务商统一管理平台，支持阿里云、Cloudflare、腾讯云等主流服务商的集中化管理。
 
-[快速开始](#-快速开始) • [在线演示](https://demo.dnsmax.com) • [完整文档](./DEPLOYMENT.md) • [API 文档](http://localhost:8000/docs)
+[快速开始](#-快速开始) • [完整文档](./DEPLOYMENT.md)
 
 </div>
 
