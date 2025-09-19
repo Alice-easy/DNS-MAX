@@ -16,7 +16,7 @@
 
 企业级多云 DNS 服务商统一管理解决方案，支持阿里云、腾讯云、Cloudflare 等主流服务商的集中化管理与自动化操作。
 
-[部署指南](./DEPLOYMENT.md) • [环境配置](./ENVIRONMENT.md)
+
 
 </div>
 
@@ -439,6 +439,6 @@ docker-compose exec frontend npm test
 [![GitHub stars](https://img.shields.io/github/stars/Alice-easy/DNS-Max?style=social)](https://github.com/Alice-easy/DNS-Max/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/Alice-easy/DNS-Max?style=social)](https://github.com/Alice-easy/DNS-Max/network/members)
 
-[🏠 项目主页](https://github.com/Alice-easy/DNS-Max) • [📖 使用文档](./DEPLOYMENT.md)
+
 
 </div>
