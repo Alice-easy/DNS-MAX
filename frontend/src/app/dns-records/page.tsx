@@ -1,23 +1,29 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  AlertCircle, 
-  Settings, 
+import {
+  Plus,
+  Edit,
+  Trash2,
+  AlertCircle,
+  Settings,
   Search,
-  Filter
+  Filter,
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { api, DNSRecord, Domain } from '@/lib/api';
 
-export default function DNSRecordsPage() {
+function DNSRecordsContent() {
   const searchParams = useSearchParams();
   const domainId = searchParams.get('domain');
 
@@ -35,7 +41,7 @@ export default function DNSRecordsPage() {
     try {
       const data = await api.getDomains();
       setDomains(data);
-      
+
       // 如果没有选中域名且有域名列表，默认选择第一个
       if (!selectedDomain && data.length > 0) {
         setSelectedDomain(data[0].id);
@@ -106,9 +112,12 @@ export default function DNSRecordsPage() {
   };
 
   const filteredRecords = records.filter(record => {
-    const matchesSearch = record.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         record.value.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = filterType === 'all' || record.type.toLowerCase() === filterType.toLowerCase();
+    const matchesSearch =
+      record.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.value.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType =
+      filterType === 'all' ||
+      record.type.toLowerCase() === filterType.toLowerCase();
     return matchesSearch && matchesType;
   });
 
@@ -122,12 +131,14 @@ export default function DNSRecordsPage() {
             <h1 className="text-3xl font-bold text-gray-900">DNS记录管理</h1>
             <p className="mt-2 text-gray-600">管理您的DNS解析记录</p>
           </div>
-          
+
           <Card>
             <CardContent className="pt-6">
               <div className="text-center py-12">
                 <Settings className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">暂无可管理的域名</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  暂无可管理的域名
+                </h3>
                 <p className="text-gray-500 mb-6">
                   您需要先添加域名才能管理DNS记录。
                 </p>
@@ -147,9 +158,7 @@ export default function DNSRecordsPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">DNS记录管理</h1>
-            <p className="mt-2 text-gray-600">
-              管理您的DNS解析记录
-            </p>
+            <p className="mt-2 text-gray-600">管理您的DNS解析记录</p>
           </div>
           <Button disabled={!selectedDomain}>
             <Plus className="h-4 w-4 mr-2" />
@@ -161,22 +170,22 @@ export default function DNSRecordsPage() {
         <Card>
           <CardHeader>
             <CardTitle>选择域名</CardTitle>
-            <CardDescription>
-              选择要管理DNS记录的域名
-            </CardDescription>
+            <CardDescription>选择要管理DNS记录的域名</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-3">
-              {domains.map((domain) => (
+              {domains.map(domain => (
                 <Button
                   key={domain.id}
-                  variant={selectedDomain === domain.id ? "default" : "outline"}
+                  variant={selectedDomain === domain.id ? 'default' : 'outline'}
                   onClick={() => setSelectedDomain(domain.id)}
                   className="h-auto p-3"
                 >
                   <div className="text-left">
                     <div className="font-medium">{domain.name}</div>
-                    <div className="text-xs text-gray-500">{domain.provider?.name}</div>
+                    <div className="text-xs text-gray-500">
+                      {domain.provider?.name}
+                    </div>
                   </div>
                 </Button>
               ))}
@@ -195,7 +204,7 @@ export default function DNSRecordsPage() {
                     type="text"
                     placeholder="搜索记录名称或值..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={e => setSearchTerm(e.target.value)}
                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -203,12 +212,14 @@ export default function DNSRecordsPage() {
                   <Filter className="h-4 w-4 text-gray-400" />
                   <select
                     value={filterType}
-                    onChange={(e) => setFilterType(e.target.value)}
+                    onChange={e => setFilterType(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="all">所有类型</option>
                     {recordTypes.map(type => (
-                      <option key={type} value={type}>{type}</option>
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -224,7 +235,12 @@ export default function DNSRecordsPage() {
               <div className="flex items-center space-x-2 text-red-800">
                 <AlertCircle className="h-5 w-5" />
                 <span>{error}</span>
-                <Button variant="link" size="sm" onClick={fetchRecords} className="text-red-800">
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={fetchRecords}
+                  className="text-red-800"
+                >
                   重试
                 </Button>
               </div>
@@ -243,13 +259,14 @@ export default function DNSRecordsPage() {
               <div className="text-center py-12">
                 <Settings className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {searchTerm || filterType !== 'all' ? '没有找到匹配的记录' : '暂无DNS记录'}
+                  {searchTerm || filterType !== 'all'
+                    ? '没有找到匹配的记录'
+                    : '暂无DNS记录'}
                 </h3>
                 <p className="text-gray-500 mb-6">
-                  {searchTerm || filterType !== 'all' 
-                    ? '请尝试调整搜索条件或筛选器' 
-                    : '为这个域名添加第一条DNS记录'
-                  }
+                  {searchTerm || filterType !== 'all'
+                    ? '请尝试调整搜索条件或筛选器'
+                    : '为这个域名添加第一条DNS记录'}
                 </p>
                 {!searchTerm && filterType === 'all' && (
                   <Button>
@@ -262,49 +279,56 @@ export default function DNSRecordsPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {filteredRecords.map((record) => (
-              <Card key={record.id} className="hover:shadow-md transition-shadow">
+            {filteredRecords.map(record => (
+              <Card
+                key={record.id}
+                className="hover:shadow-md transition-shadow"
+              >
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-4 gap-4">
                       <div>
                         <div className="flex items-center space-x-2">
-                          <Badge 
-                            variant="secondary" 
+                          <Badge
+                            variant="secondary"
                             className={getRecordTypeColor(record.type)}
                           >
                             {record.type}
                           </Badge>
-                          <Badge variant={record.is_active ? "default" : "secondary"}>
+                          <Badge
+                            variant={record.is_active ? 'default' : 'secondary'}
+                          >
                             {record.is_active ? '启用' : '禁用'}
                           </Badge>
                         </div>
                         <p className="text-sm text-gray-500 mt-1">类型和状态</p>
                       </div>
-                      
+
                       <div className="min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{record.name}</p>
+                        <p className="font-medium text-gray-900 truncate">
+                          {record.name}
+                        </p>
                         <p className="text-sm text-gray-500">记录名称</p>
                       </div>
-                      
+
                       <div className="min-w-0">
                         <p className="text-gray-900 truncate">{record.value}</p>
                         <p className="text-sm text-gray-500">记录值</p>
                       </div>
-                      
+
                       <div>
                         <p className="text-gray-900">{record.ttl}s</p>
                         <p className="text-sm text-gray-500">TTL</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2 ml-4">
                       <Button variant="outline" size="sm">
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleDelete(record.id)}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
@@ -312,11 +336,12 @@ export default function DNSRecordsPage() {
                       </Button>
                     </div>
                   </div>
-                  
+
                   {record.priority && (
                     <div className="mt-2 pt-2 border-t border-gray-100">
                       <p className="text-sm text-gray-600">
-                        优先级: <span className="font-medium">{record.priority}</span>
+                        优先级:{' '}
+                        <span className="font-medium">{record.priority}</span>
                       </p>
                     </div>
                   )}
@@ -331,11 +356,13 @@ export default function DNSRecordsPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="pt-6">
-                <div className="text-2xl font-bold text-gray-900">{records.length}</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {records.length}
+                </div>
                 <p className="text-sm text-gray-600">总记录数</p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold text-green-600">
@@ -344,7 +371,7 @@ export default function DNSRecordsPage() {
                 <p className="text-sm text-gray-600">启用记录</p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardContent className="pt-6">
                 <div className="text-2xl font-bold text-gray-600">
@@ -353,10 +380,12 @@ export default function DNSRecordsPage() {
                 <p className="text-sm text-gray-600">禁用记录</p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardContent className="pt-6">
-                <div className="text-2xl font-bold text-blue-600">{recordTypes.length}</div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {recordTypes.length}
+                </div>
                 <p className="text-sm text-gray-600">记录类型</p>
               </CardContent>
             </Card>
@@ -364,5 +393,13 @@ export default function DNSRecordsPage() {
         )}
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function DNSRecordsPage() {
+  return (
+    <Suspense fallback={<div>加载中...</div>}>
+      <DNSRecordsContent />
+    </Suspense>
   );
 }

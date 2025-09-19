@@ -1,5 +1,5 @@
 # 多阶段构建：构建阶段
-FROM node:18-alpine AS builder
+FROM node:18-slim AS builder
 
 # 设置工作目录
 WORKDIR /app
@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # 生产阶段
-FROM node:18-alpine AS runner
+FROM node:18-slim AS runner
 
 # 设置工作目录
 WORKDIR /app
@@ -27,8 +27,8 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # 创建非root用户
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN groupadd --system --gid 1001 nodejs
+RUN useradd --system --uid 1001 nextjs
 
 # 复制构建产物
 COPY --from=builder /app/public ./public

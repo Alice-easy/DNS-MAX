@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, AlertCircle, Server } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -87,7 +93,9 @@ export default function ProvidersPage() {
         {/* 页面标题和操作 */}
         <div className="space-y-4 sm:space-y-0 sm:flex sm:justify-between sm:items-center px-2 sm:px-0">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">DNS服务商管理</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
+              DNS服务商管理
+            </h1>
             <p className="mt-2 text-sm sm:text-base text-gray-600">
               管理您的DNS服务商配置
             </p>
@@ -96,9 +104,14 @@ export default function ProvidersPage() {
             <Button className="w-full sm:w-auto touch-manipulation">
               <Plus className="h-4 w-4 mr-2" />
               添加服务商
-              <kbd className="hidden lg:inline ml-2 px-2 py-0.5 text-xs bg-gray-100 border border-gray-300 rounded">Ctrl+N</kbd>
+              <kbd className="hidden lg:inline ml-2 px-2 py-0.5 text-xs bg-gray-100 border border-gray-300 rounded">
+                Ctrl+N
+              </kbd>
             </Button>
-            <Button variant="outline" className="hidden lg:inline-flex w-auto touch-manipulation">
+            <Button
+              variant="outline"
+              className="hidden lg:inline-flex w-auto touch-manipulation"
+            >
               批量导入
             </Button>
           </div>
@@ -111,7 +124,12 @@ export default function ProvidersPage() {
               <div className="flex items-center space-x-2 text-red-800">
                 <AlertCircle className="h-5 w-5" />
                 <span>{error}</span>
-                <Button variant="link" size="sm" onClick={fetchProviders} className="text-red-800">
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={fetchProviders}
+                  className="text-red-800"
+                >
                   重试
                 </Button>
               </div>
@@ -125,7 +143,9 @@ export default function ProvidersPage() {
             <CardContent className="pt-6">
               <div className="text-center py-12">
                 <Server className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">暂无DNS服务商</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  暂无DNS服务商
+                </h3>
                 <p className="text-gray-500 mb-6">
                   您还没有配置任何DNS服务商。添加服务商后，您就可以管理域名和DNS记录了。
                 </p>
@@ -138,40 +158,52 @@ export default function ProvidersPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {providers.map((provider) => (
-              <Card key={provider.id} className="hover:shadow-md transition-shadow">
+            {providers.map(provider => (
+              <Card
+                key={provider.id}
+                className="hover:shadow-md transition-shadow"
+              >
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">{provider.name}</CardTitle>
-                    <Badge 
-                      variant="secondary" 
+                    <Badge
+                      variant="secondary"
                       className={getProviderTypeColor(provider.type)}
                     >
                       {getProviderTypeName(provider.type)}
                     </Badge>
                   </div>
                   <CardDescription>
-                    创建时间: {new Date(provider.created_at).toLocaleDateString()}
+                    创建时间:{' '}
+                    {new Date(provider.created_at).toLocaleDateString()}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-500">状态</span>
-                      <Badge variant={provider.is_active ? "default" : "secondary"}>
+                      <Badge
+                        variant={provider.is_active ? 'default' : 'secondary'}
+                      >
                         {provider.is_active ? '启用' : '禁用'}
                       </Badge>
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-500">配置状态</span>
                       <Badge variant="outline">
-                        {Object.keys(provider.config || {}).length > 0 ? '已配置' : '未配置'}
+                        {Object.keys(provider.config || {}).length > 0
+                          ? '已配置'
+                          : '未配置'}
                       </Badge>
                     </div>
 
                     <div className="flex space-x-2 pt-4">
-                      <Button variant="outline" size="sm" className="flex-1 touch-manipulation min-h-[36px]">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 touch-manipulation min-h-[36px]"
+                      >
                         <Edit className="h-4 w-4 mr-1" />
                         <span className="hidden sm:inline">编辑</span>
                       </Button>

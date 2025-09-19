@@ -8,14 +8,20 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
 import { loginSchema, type LoginFormData } from '@/lib/validations/auth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const setAuth = useAuthStore(state => state.setAuth);
   const [error, setError] = useState<string | null>(null);
 
   const {
@@ -28,7 +34,7 @@ export default function LoginPage() {
 
   const loginMutation = useMutation({
     mutationFn: api.login,
-    onSuccess: async (data) => {
+    onSuccess: async data => {
       try {
         // 获取用户信息
         const user = await api.getCurrentUser();
@@ -70,9 +76,7 @@ export default function LoginPage() {
         <Card>
           <CardHeader>
             <CardTitle>登录账户</CardTitle>
-            <CardDescription>
-              输入您的用户名和密码以访问系统
-            </CardDescription>
+            <CardDescription>输入您的用户名和密码以访问系统</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -83,7 +87,10 @@ export default function LoginPage() {
               )}
 
               <div className="space-y-2">
-                <label htmlFor="username" className="text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="username"
+                  className="text-sm font-medium text-gray-700"
+                >
                   用户名
                 </label>
                 <Input
@@ -94,12 +101,17 @@ export default function LoginPage() {
                   className={errors.username ? 'border-red-500' : ''}
                 />
                 {errors.username && (
-                  <p className="text-red-600 text-sm">{errors.username.message}</p>
+                  <p className="text-red-600 text-sm">
+                    {errors.username.message}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="password"
+                  className="text-sm font-medium text-gray-700"
+                >
                   密码
                 </label>
                 <Input
@@ -110,7 +122,9 @@ export default function LoginPage() {
                   className={errors.password ? 'border-red-500' : ''}
                 />
                 {errors.password && (
-                  <p className="text-red-600 text-sm">{errors.password.message}</p>
+                  <p className="text-red-600 text-sm">
+                    {errors.password.message}
+                  </p>
                 )}
               </div>
 

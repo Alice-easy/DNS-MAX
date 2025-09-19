@@ -4,15 +4,15 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { 
-  Home, 
-  Server, 
-  Globe, 
-  Settings, 
-  User as UserIcon, 
-  LogOut, 
+import {
+  Home,
+  Server,
+  Globe,
+  Settings,
+  User as UserIcon,
+  LogOut,
   Menu,
-  X
+  X,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { User } from '@/types/api';
@@ -45,7 +45,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Mobile sidebar */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
+          <div
+            className="fixed inset-0 bg-gray-600 bg-opacity-75"
+            onClick={() => setSidebarOpen(false)}
+          />
           <div className="relative flex w-full max-w-xs flex-1 flex-col bg-white">
             <div className="absolute top-0 right-0 -mr-12 pt-2">
               <Button
@@ -57,7 +60,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <X className="h-6 w-6" />
               </Button>
             </div>
-            <SidebarContent pathname={pathname} onLogout={handleLogout} user={user} />
+            <SidebarContent
+              pathname={pathname}
+              onLogout={handleLogout}
+              user={user}
+            />
           </div>
         </div>
       )}
@@ -65,7 +72,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Desktop sidebar */}
       <div className="hidden md:fixed md:inset-y-0 md:flex md:w-60 lg:w-64 md:flex-col">
         <div className="flex min-h-0 flex-1 flex-col bg-white border-r border-gray-200">
-          <SidebarContent pathname={pathname} onLogout={handleLogout} user={user} />
+          <SidebarContent
+            pathname={pathname}
+            onLogout={handleLogout}
+            user={user}
+          />
         </div>
       </div>
 
@@ -95,14 +106,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   );
 }
 
-function SidebarContent({ 
-  pathname, 
-  onLogout, 
-  user 
-}: { 
-  pathname: string; 
-  onLogout: () => void; 
-  user: User | null; 
+function SidebarContent({
+  pathname,
+  onLogout,
+  user,
+}: {
+  pathname: string;
+  onLogout: () => void;
+  user: User | null;
 }) {
   return (
     <>
@@ -111,8 +122,9 @@ function SidebarContent({
           <h1 className="text-2xl font-bold text-gray-900">DNS分发系统</h1>
         </div>
         <nav className="mt-5 flex-1 space-y-1 px-2">
-          {navigation.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+          {navigation.map(item => {
+            const isActive =
+              pathname === item.href || pathname.startsWith(item.href + '/');
             return (
               <Link
                 key={item.name}
@@ -125,7 +137,9 @@ function SidebarContent({
               >
                 <item.icon
                   className={`mr-3 flex-shrink-0 h-6 w-6 ${
-                    isActive ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500'
+                    isActive
+                      ? 'text-gray-500'
+                      : 'text-gray-400 group-hover:text-gray-500'
                   }`}
                 />
                 {item.name}
@@ -134,7 +148,7 @@ function SidebarContent({
           })}
         </nav>
       </div>
-      
+
       <div className="flex flex-shrink-0 border-t border-gray-200 p-4">
         <div className="flex items-center">
           <div className="flex-shrink-0">
@@ -143,7 +157,9 @@ function SidebarContent({
             </div>
           </div>
           <div className="ml-3 flex-1">
-            <p className="text-sm font-medium text-gray-700">{user?.username || '用户'}</p>
+            <p className="text-sm font-medium text-gray-700">
+              {user?.username || '用户'}
+            </p>
             <p className="text-xs text-gray-500">管理员</p>
           </div>
           <Button

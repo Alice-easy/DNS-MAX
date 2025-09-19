@@ -2,9 +2,23 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { User as UserIcon, Mail, Calendar, Shield, Edit, Save, X } from 'lucide-react';
+import {
+  User as UserIcon,
+  Mail,
+  Calendar,
+  Shield,
+  Edit,
+  Save,
+  X,
+} from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAuthStore } from '@/stores/authStore';
 import { User } from '@/types/api';
@@ -14,7 +28,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [formData, setFormData] = useState({
     username: user?.username || '',
     email: '', // 由于API类型中没有email字段，暂时设为空字符串
@@ -33,11 +47,11 @@ export default function ProfilePage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       // 这里应该调用更新用户信息的API
       // const updatedUser = await api.updateUser(formData);
       // updateUser(updatedUser);
-      
+
       // 暂时模拟更新，因为没有对应的API
       const updatedUser: User = {
         ...user!,
@@ -45,7 +59,7 @@ export default function ProfilePage() {
         // 注意：email字段不在User类型中，暂时忽略
       };
       updateUser(updatedUser);
-      
+
       setIsEditing(false);
     } catch (err) {
       setError('更新用户信息失败');
@@ -80,9 +94,7 @@ export default function ProfilePage() {
         {/* 页面标题 */}
         <div>
           <h1 className="text-3xl font-bold text-gray-900">个人资料</h1>
-          <p className="mt-2 text-gray-600">
-            管理您的账户信息和设置
-          </p>
+          <p className="mt-2 text-gray-600">管理您的账户信息和设置</p>
         </div>
 
         {/* 基本信息卡片 */}
@@ -91,9 +103,7 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>基本信息</CardTitle>
-                <CardDescription>
-                  您的账户基本信息
-                </CardDescription>
+                <CardDescription>您的账户基本信息</CardDescription>
               </div>
               {!isEditing ? (
                 <Button variant="outline" onClick={() => setIsEditing(true)}>
@@ -130,7 +140,9 @@ export default function ProfilePage() {
                       <input
                         type="text"
                         value={formData.username}
-                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                        onChange={e =>
+                          setFormData({ ...formData, username: e.target.value })
+                        }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="请输入用户名"
                       />
@@ -142,7 +154,9 @@ export default function ProfilePage() {
                       <input
                         type="email"
                         value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        onChange={e =>
+                          setFormData({ ...formData, email: e.target.value })
+                        }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="请输入邮箱地址"
                       />
@@ -153,7 +167,9 @@ export default function ProfilePage() {
                     <div className="flex items-center space-x-3">
                       <UserIcon className="h-5 w-5 text-gray-400" />
                       <div>
-                        <p className="font-medium text-gray-900">{user.username}</p>
+                        <p className="font-medium text-gray-900">
+                          {user.username}
+                        </p>
                         <p className="text-sm text-gray-500">用户名</p>
                       </div>
                     </div>
@@ -182,9 +198,7 @@ export default function ProfilePage() {
         <Card>
           <CardHeader>
             <CardTitle>账户状态</CardTitle>
-            <CardDescription>
-              您的账户当前状态信息
-            </CardDescription>
+            <CardDescription>您的账户当前状态信息</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
@@ -195,9 +209,7 @@ export default function ProfilePage() {
                   <p className="text-sm text-gray-500">当前账户状态</p>
                 </div>
               </div>
-              <Badge variant="default">
-                正常
-              </Badge>
+              <Badge variant="default">正常</Badge>
             </div>
 
             <div className="flex items-center justify-between">
@@ -232,25 +244,25 @@ export default function ProfilePage() {
         <Card>
           <CardHeader>
             <CardTitle>安全设置</CardTitle>
-            <CardDescription>
-              管理您的账户安全选项
-            </CardDescription>
+            <CardDescription>管理您的账户安全选项</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium text-gray-900">修改密码</p>
-                <p className="text-sm text-gray-500">定期更改密码以保护账户安全</p>
+                <p className="text-sm text-gray-500">
+                  定期更改密码以保护账户安全
+                </p>
               </div>
-              <Button variant="outline">
-                修改密码
-              </Button>
+              <Button variant="outline">修改密码</Button>
             </div>
 
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium text-gray-900">双因素认证</p>
-                <p className="text-sm text-gray-500">启用双因素认证增强账户安全</p>
+                <p className="text-sm text-gray-500">
+                  启用双因素认证增强账户安全
+                </p>
               </div>
               <Badge variant="secondary">未启用</Badge>
             </div>
@@ -260,9 +272,7 @@ export default function ProfilePage() {
                 <p className="font-medium text-gray-900">登录记录</p>
                 <p className="text-sm text-gray-500">查看最近的登录活动</p>
               </div>
-              <Button variant="outline">
-                查看记录
-              </Button>
+              <Button variant="outline">查看记录</Button>
             </div>
           </CardContent>
         </Card>
@@ -271,9 +281,7 @@ export default function ProfilePage() {
         <Card>
           <CardHeader>
             <CardTitle>系统偏好</CardTitle>
-            <CardDescription>
-              个性化您的使用体验
-            </CardDescription>
+            <CardDescription>个性化您的使用体验</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">

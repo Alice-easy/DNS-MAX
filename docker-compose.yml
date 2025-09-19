@@ -200,7 +200,8 @@ services:
   # 前端 Web 服务
   # ===========================================
   frontend:
-    image: ${FRONTEND_IMAGE:-ghcr.io/your-org/dns-max-frontend:latest}
+    build: ./frontend
+    image: dns-max-frontend:latest
     container_name: dns-max-frontend
     restart: unless-stopped
 

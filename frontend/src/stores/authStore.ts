@@ -13,7 +13,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    set => ({
       user: null,
       token: null,
       isAuthenticated: false,
@@ -44,8 +44,8 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      updateUser: (user) => {
-        set((state) => ({
+      updateUser: user => {
+        set(state => ({
           ...state,
           user,
         }));
@@ -58,7 +58,7 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-store',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
+      partialize: state => ({
         user: state.user,
         token: state.token,
         isAuthenticated: state.isAuthenticated,

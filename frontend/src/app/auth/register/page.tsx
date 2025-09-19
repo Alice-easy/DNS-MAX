@@ -8,14 +8,20 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
 import { registerSchema, type RegisterFormData } from '@/lib/validations/auth';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const setAuth = useAuthStore(state => state.setAuth);
   const [error, setError] = useState<string | null>(null);
 
   const {
@@ -28,7 +34,7 @@ export default function RegisterPage() {
 
   const registerMutation = useMutation({
     mutationFn: api.register,
-    onSuccess: async (data) => {
+    onSuccess: async data => {
       try {
         // 获取用户信息
         const user = await api.getCurrentUser();
@@ -72,9 +78,7 @@ export default function RegisterPage() {
         <Card>
           <CardHeader>
             <CardTitle>创建账户</CardTitle>
-            <CardDescription>
-              注册新账户以开始管理您的域名DNS
-            </CardDescription>
+            <CardDescription>注册新账户以开始管理您的域名DNS</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -85,7 +89,10 @@ export default function RegisterPage() {
               )}
 
               <div className="space-y-2">
-                <label htmlFor="username" className="text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="username"
+                  className="text-sm font-medium text-gray-700"
+                >
                   用户名
                 </label>
                 <Input
@@ -96,7 +103,9 @@ export default function RegisterPage() {
                   className={errors.username ? 'border-red-500' : ''}
                 />
                 {errors.username && (
-                  <p className="text-red-600 text-sm">{errors.username.message}</p>
+                  <p className="text-red-600 text-sm">
+                    {errors.username.message}
+                  </p>
                 )}
                 <p className="text-xs text-gray-500">
                   用户名只能包含字母、数字、下划线和短横线
@@ -104,7 +113,10 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="password"
+                  className="text-sm font-medium text-gray-700"
+                >
                   密码
                 </label>
                 <Input
@@ -115,12 +127,17 @@ export default function RegisterPage() {
                   className={errors.password ? 'border-red-500' : ''}
                 />
                 {errors.password && (
-                  <p className="text-red-600 text-sm">{errors.password.message}</p>
+                  <p className="text-red-600 text-sm">
+                    {errors.password.message}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="confirmPassword"
+                  className="text-sm font-medium text-gray-700"
+                >
                   确认密码
                 </label>
                 <Input
@@ -131,7 +148,9 @@ export default function RegisterPage() {
                   className={errors.confirmPassword ? 'border-red-500' : ''}
                 />
                 {errors.confirmPassword && (
-                  <p className="text-red-600 text-sm">{errors.confirmPassword.message}</p>
+                  <p className="text-red-600 text-sm">
+                    {errors.confirmPassword.message}
+                  </p>
                 )}
               </div>
 
@@ -140,7 +159,9 @@ export default function RegisterPage() {
                 className="w-full"
                 disabled={isSubmitting || registerMutation.isPending}
               >
-                {isSubmitting || registerMutation.isPending ? '注册中...' : '注册'}
+                {isSubmitting || registerMutation.isPending
+                  ? '注册中...'
+                  : '注册'}
               </Button>
             </form>
 
