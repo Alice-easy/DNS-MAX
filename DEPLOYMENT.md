@@ -40,15 +40,20 @@ cp .env.example .env
 nano .env
 ```
 
-#### 3. 启动服务
+#### 3. 拉取镜像并启动服务
 
 ```bash
+# 拉取预构建镜像（如需自定义镜像，可在 .env 中设置 BACKEND_IMAGE、FRONTEND_IMAGE）
+docker-compose pull backend frontend
+
 # 启动所有服务
 docker-compose up -d
 
 # 等待服务启动完成
 sleep 30
 ```
+
+> 💡 docker-compose.yml 默认会拉取由 `Auto Package` GitHub Actions 工作流发布的预构建镜像（示例：`ghcr.io/your-org/dns-max-backend:latest` 与 `ghcr.io/your-org/dns-max-frontend:latest`）。可在 `.env` 中覆盖 `BACKEND_IMAGE`、`FRONTEND_IMAGE` 以指定其他标签或仓库。
 
 #### 4. 验证部署
 
@@ -93,6 +98,10 @@ if [ ! -f ".env" ]; then
     read -p "按回车键继续..."
 fi
 
+# 拉取镜像
+echo "📦 拉取镜像..."
+docker-compose pull backend frontend
+
 # 启动服务
 echo "📦 启动服务..."
 docker-compose up -d
@@ -127,6 +136,9 @@ docker-compose restart [service_name]
 
 # 查看服务状态
 docker-compose ps
+
+# 拉取最新镜像
+docker-compose pull backend frontend
 
 # 更新并重启
 git pull && docker-compose pull && docker-compose up -d
@@ -212,8 +224,8 @@ docker-compose logs [service_name]
 # 检查容器状态
 docker-compose ps
 
-# 重新构建镜像
-docker-compose build --no-cache [service_name]
+# 重新拉取镜像
+docker-compose pull --include-deps [service_name]
 
 # 清理并重新启动
 docker-compose down -v

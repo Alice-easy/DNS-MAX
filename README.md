@@ -44,14 +44,20 @@ cd dns-max
 cp .env.example .env
 # 编辑 .env 文件，修改数据库密码和 JWT 密钥
 
-# 3. 启动服务
+# 3. 拉取预构建镜像
+#    （如需使用自定义镜像，可在 .env 中设置 BACKEND_IMAGE、FRONTEND_IMAGE 或使用环境变量覆盖）
+docker-compose pull backend frontend
+
+# 4. 启动服务
 docker-compose up -d
 
-# 4. 访问应用
+# 5. 访问应用
 echo "前端界面: http://localhost:3000"
 echo "后端 API: http://localhost:8000"
 echo "API 文档: http://localhost:8000/docs"
 ```
+
+> 💡 `docker-compose.yml` 默认指向由 `Auto Package` GitHub Actions 工作流产出的预构建镜像（示例：`ghcr.io/your-org/dns-max-backend:latest` 与 `ghcr.io/your-org/dns-max-frontend:latest`）。如需使用其他版本，可在 `.env` 中设置 `BACKEND_IMAGE`、`FRONTEND_IMAGE` 或通过环境变量覆盖。
 
 ### 验证部署
 
@@ -148,7 +154,7 @@ docker-compose logs -f
 
 # 重新构建
 docker-compose down
-docker-compose build --no-cache
+docker-compose pull --include-deps
 docker-compose up -d
 ```
 
@@ -182,12 +188,6 @@ docker-compose exec postgres pg_isready
 - [Next.js](https://nextjs.org/) - React 生产级框架
 - [PostgreSQL](https://www.postgresql.org/) - 先进的开源数据库
 - [Redis](https://redis.io/) - 内存数据结构存储
-
-## 📞 支持
-
-- 🐛 [问题反馈](https://github.com/yourusername/dns-max/issues)
-- 💬 [讨论交流](https://github.com/yourusername/dns-max/discussions)
-- 📧 邮箱: alice-east@ea.cloudns.ch
 
 ---
 

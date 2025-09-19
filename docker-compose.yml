@@ -144,12 +144,7 @@ services:
   # 后端 API 服务
   # ===========================================
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-      args:
-        - BUILDKIT_INLINE_CACHE=1
-    image: dns-max/backend:latest
+    image: ${BACKEND_IMAGE:-ghcr.io/your-org/dns-max-backend:latest}
     container_name: dns-max-backend
     restart: unless-stopped
 
@@ -174,7 +169,6 @@ services:
 
     # 数据卷挂载
     volumes:
-      - ./backend:/app:ro # 只读挂载（生产环境）
       - backend_logs:/app/logs
       - backend_uploads:/app/uploads
       - backend_tmp:/tmp
@@ -232,13 +226,7 @@ services:
   # 前端 Web 服务
   # ===========================================
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        - BUILDKIT_INLINE_CACHE=1
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
-    image: dns-max/frontend:latest
+    image: ${FRONTEND_IMAGE:-ghcr.io/your-org/dns-max-frontend:latest}
     container_name: dns-max-frontend
     restart: unless-stopped
 
@@ -548,8 +536,8 @@ networks:
 # 8. 完全清理（包括数据卷）:
 #    docker-compose down -v
 #
-# 9. 重新构建镜像:
-#    docker-compose build --no-cache
+# 9. 更新远程镜像缓存:
+#    docker-compose pull
 #
 # 10. 扩展后端服务:
 #     docker-compose up -d --scale backend=3
