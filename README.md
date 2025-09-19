@@ -54,16 +54,7 @@
 
 ## 🚀 快速开始
 
-### 系统要求
 
-| 组件 | 最低要求 | 推荐配置 |
-|------|----------|----------|
-| **操作系统** | Linux/Windows/macOS | Ubuntu 20.04+ |
-| **CPU** | 2 核心 | 4 核心+ |
-| **内存** | 4GB RAM | 8GB RAM+ |
-| **存储** | 20GB | 50GB SSD |
-| **Docker** | 20.0+ | 最新版本 |
-| **Docker Compose** | 2.0+ | 最新版本 |
 
 ### 一键部署
 
@@ -82,16 +73,7 @@ cp .env.example .env
 # 3. 启动服务（使用预构建镜像）
 docker-compose up -d
 
-# 4. 等待服务启动
-echo "等待服务启动中..."
-sleep 30
 
-# 5. 验证部署
-curl -f http://localhost:8000/health && echo "✅ 后端服务正常"
-curl -f http://localhost:3000 > /dev/null && echo "✅ 前端服务正常"
-```
-
-### 访问应用
 
 部署完成后，您可以通过以下地址访问：
 

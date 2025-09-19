@@ -25,7 +25,7 @@ jobs:
   build-backend:
     name: Build Backend Docker Image
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -68,7 +68,7 @@ jobs:
   build-frontend:
     name: Build Frontend Docker Image
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -113,7 +113,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-backend, build-frontend]
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -125,11 +125,11 @@ jobs:
           # 获取最新的镜像标签
           BACKEND_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.sha }}"
           FRONTEND_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.sha }}"
-          
+
           # 更新 docker-compose.registry.yml 中的镜像引用
           sed -i "s|image: ghcr.io/alice-easy/dns-max/backend:.*|image: ${BACKEND_IMAGE}|g" docker-compose.registry.yml
           sed -i "s|image: ghcr.io/alice-easy/dns-max/frontend:.*|image: ${FRONTEND_IMAGE}|g" docker-compose.registry.yml
-          
+
           echo "Updated docker-compose.registry.yml with new images:"
           echo "Backend: ${BACKEND_IMAGE}"
           echo "Frontend: ${FRONTEND_IMAGE}"
@@ -138,7 +138,7 @@ jobs:
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          
+
           if [ -n "$(git diff --name-only)" ]; then
             git add docker-compose.registry.yml
             git commit -m "chore: update docker-compose.registry.yml with new image tags
