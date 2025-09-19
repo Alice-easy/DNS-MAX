@@ -19,7 +19,6 @@ httpx = "^0.25.2"
 tencentcloud-sdk-python-dnspod = "^3.0.1043"
 alibabacloud-alidns20150109 = "^3.0.1"
 alibabacloud-tea-openapi = "^0.3.9"
-python-dotenv = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"

@@ -1,543 +1,117 @@
-# ===========================================
-# DNS Max 生产环境 Docker Compose 配置
-# ===========================================
-# 此配置文件用于生产环境部署，包含了完整的服务栈
-# 包括数据库、缓存、后端API、前端Web和反向代理
-
 services:
-  # ===========================================
-  # PostgreSQL 数据库服务
-  # ===========================================
   postgres:
     image: postgres:15-alpine
     container_name: dns-max-postgres
     restart: unless-stopped
-
-    # 环境变量配置
     environment:
       POSTGRES_DB: dns_max
       POSTGRES_USER: dns_max_user
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dns_max_password}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
-      PGDATA: /var/lib/postgresql/data/pgdata
-
-    # 数据卷挂载
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
-      - ./postgres/logs:/var/log/postgresql
-
-    # 网络端口（生产环境建议注释掉，仅容器内访问）
     ports:
       - "5432:5432"
-
-    # 安全配置
-    security_opt:
-      - no-new-privileges:true
-    user: "999:999" # postgres用户
-
-    # 资源限制
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: "1.0"
-        reservations:
-          memory: 512M
-          cpus: "0.5"
-
-    # 健康检查
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dns_max_user -d dns_max"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 30s
-
-    # 自定义启动命令（性能优化）
-    command: >
-      postgres
-      -c shared_preload_libraries=pg_stat_statements
-      -c pg_stat_statements.track=all
-      -c max_connections=100
-      -c shared_buffers=256MB
-      -c effective_cache_size=1GB
-      -c maintenance_work_mem=64MB
-      -c checkpoint_completion_target=0.9
-      -c wal_buffers=16MB
-      -c default_statistics_target=100
-      -c random_page_cost=1.1
-      -c effective_io_concurrency=200
-      -c log_min_duration_statement=1000
-      -c log_checkpoints=on
-      -c log_connections=on
-      -c log_disconnections=on
-      -c log_lock_waits=on
-
-    # 网络配置
     networks:
       - dns-max-backend
 
-  # ===========================================
-  # Redis 缓存服务
-  # ===========================================
   redis:
     image: redis:7-alpine
     container_name: dns-max-redis
     restart: unless-stopped
-
-    # 网络端口（生产环境建议注释掉）
     ports:
       - "6379:6379"
-
-    # 数据卷挂载
     volumes:
       - redis_data:/data
-      - ./redis/redis.conf:/etc/redis/redis.conf:ro
-      - ./redis/logs:/var/log/redis
-
-    # 安全配置
-    security_opt:
-      - no-new-privileges:true
-    user: "999:999" # redis用户
-
-    # 资源限制
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "0.5"
-        reservations:
-          memory: 256M
-          cpus: "0.25"
-
-    # 健康检查
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 20s
-
-    # Redis 配置优化
-    command: >
-      redis-server
-      --maxmemory 256mb
-      --maxmemory-policy allkeys-lru
-      --save ""
-      --appendonly no
-      --tcp-keepalive 300
-      --timeout 0
-      --tcp-backlog 511
-      --databases 16
-      --loglevel notice
-      --logfile /var/log/redis/redis.log
-
-    # 网络配置
     networks:
       - dns-max-backend
 
-  # ===========================================
-  # 后端 API 服务
-  # ===========================================
   backend:
     build: ./backend
     container_name: dns-max-backend
     restart: unless-stopped
-
-    # 环境变量配置
     environment:
       - DATABASE_URL=postgresql+asyncpg://dns_max_user:${POSTGRES_PASSWORD:-dns_max_password}@postgres:5432/dns_max
-      - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=${SECRET_KEY:-your_super_secret_key_here_change_in_production}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
-      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS:-["http://localhost:3000","http://localhost:3001","http://frontend:3000"]}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - WORKERS_COUNT=${WORKERS_COUNT:-4}
-      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
-
-    # 额外环境变量文件
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-your_encryption_key_here_32_chars}
     env_file:
       - .env
-
-    # 网络端口
     ports:
       - "8000:8000"
-
-    # 依赖服务
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-
-    # 资源限制
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: "1.0"
-        reservations:
-          memory: 512M
-          cpus: "0.5"
-
-    # 健康检查
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 60s
-
-    # 网络配置
     networks:
       - dns-max-backend
       - dns-max-frontend
 
-  # ===========================================
-  # 前端 Web 服务
-  # ===========================================
   frontend:
     build: ./frontend
     container_name: dns-max-frontend
     restart: unless-stopped
-
-    # 环境变量配置
     environment:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
-      - NEXT_PUBLIC_APP_NAME=${NEXT_PUBLIC_APP_NAME:-DNS Max}
       - NODE_ENV=production
-
-    # 网络端口
     ports:
       - "3000:3000"
-
-    # 数据卷挂载
-    volumes:
-      - frontend_logs:/app/logs
-      - frontend_cache:/app/.next/cache
-
-    # 依赖服务
     depends_on:
       backend:
         condition: service_healthy
-
-    # 安全配置
-    security_opt:
-      - no-new-privileges:true
-    user: "1000:1000" # 非root用户
-
-    # 资源限制
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "0.5"
-        reservations:
-          memory: 256M
-          cpus: "0.25"
-
-    # 健康检查
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
-
-    # 网络配置
     networks:
       - dns-max-frontend
 
-  # ===========================================
-  # Nginx 反向代理服务
-  # ===========================================
   nginx:
     image: nginx:alpine
     container_name: dns-max-nginx
     restart: unless-stopped
-
-    # 网络端口
     ports:
       - "80:80"
       - "443:443"
-
-    # 数据卷挂载
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
       - ./nginx/logs:/var/log/nginx
-      - nginx_cache:/var/cache/nginx
-      - nginx_tmp:/tmp
-
-    # 依赖服务
     depends_on:
       - frontend
       - backend
-
-    # 安全配置
-    security_opt:
-      - no-new-privileges:true
-
-    # 资源限制
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: "0.5"
-        reservations:
-          memory: 128M
-          cpus: "0.25"
-
-    # 健康检查
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 20s
-
-    # 网络配置
     networks:
       - dns-max-frontend
 
-    # 标签（用于容器管理）
-    labels:
-      - "com.dns-max.service=nginx"
-      - "com.dns-max.version=1.0.0"
-
-  # ===========================================
-  # 日志收集服务 (可选)
-  # ===========================================
-  fluentd:
-    image: fluent/fluentd:latest
-    container_name: dns-max-fluentd
-    restart: unless-stopped
-
-    # 数据卷挂载
-    volumes:
-      - ./fluentd/fluent.conf:/fluentd/etc/fluent.conf:ro
-      - backend_logs:/var/log/backend:ro
-      - frontend_logs:/var/log/frontend:ro
-      - nginx_logs:/var/log/nginx:ro
-      - fluentd_logs:/var/log/fluentd
-
-    # 网络端口
-    ports:
-      - "24224:24224"
-      - "24224:24224/udp"
-
-    # 网络配置
-    networks:
-      - dns-max-backend
-
-    # 资源限制
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: "0.25"
-        reservations:
-          memory: 128M
-          cpus: "0.125"
-
-    # 仅在日志收集启用时运行
-    profiles:
-      - logging
-
-  # ===========================================
-  # 监控服务 Prometheus (可选)
-  # ===========================================
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: dns-max-prometheus
-    restart: unless-stopped
-
-    # 配置文件
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-
-    # 网络端口
-    ports:
-      - "9090:9090"
-
-    # 启动命令
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-      - "--web.console.libraries=/etc/prometheus/console_libraries"
-      - "--web.console.templates=/etc/prometheus/consoles"
-      - "--storage.tsdb.retention.time=200h"
-      - "--web.enable-lifecycle"
-
-    # 网络配置
-    networks:
-      - dns-max-backend
-
-    # 仅在监控启用时运行
-    profiles:
-      - monitoring
-
-  # ===========================================
-  # Grafana 可视化 (可选)
-  # ===========================================
-  grafana:
-    image: grafana/grafana:latest
-    container_name: dns-max-grafana
-    restart: unless-stopped
-
-    # 环境变量
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
-      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
-
-    # 数据卷
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
-      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
-
-    # 网络端口
-    ports:
-      - "3001:3000"
-
-    # 依赖服务
-    depends_on:
-      - prometheus
-
-    # 网络配置
-    networks:
-      - dns-max-backend
-
-    # 仅在监控启用时运行
-    profiles:
-      - monitoring
-
-# ===========================================
-# 数据卷定义
-# ===========================================
 volumes:
-  # 数据库数据
   postgres_data:
-    driver: local
-
-  # Redis 数据
   redis_data:
-    driver: local
 
-  # 后端日志和文件
-  backend_logs:
-    driver: local
-  backend_uploads:
-    driver: local
-  backend_tmp:
-    driver: local
-
-  # 前端缓存和日志
-  frontend_logs:
-    driver: local
-  frontend_cache:
-    driver: local
-
-  # Nginx 缓存和临时文件
-  nginx_cache:
-    driver: local
-  nginx_tmp:
-    driver: local
-
-  # 日志收集
-  fluentd_logs:
-    driver: local
-
-  # 监控数据
-  prometheus_data:
-    driver: local
-  grafana_data:
-    driver: local
-
-# ===========================================
-# 网络定义
-# ===========================================
 networks:
-  # 后端服务网络（数据库、缓存、API）
   dns-max-backend:
-    driver: bridge
-    internal: false # 允许外部访问，用于API调用外部DNS服务
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
-    labels:
-      - "com.dns-max.network=backend"
-
-  # 前端服务网络（Web界面、代理）
   dns-max-frontend:
-    driver: bridge
-    internal: false
-    ipam:
-      config:
-        - subnet: 172.21.0.0/16
-    labels:
-      - "com.dns-max.network=frontend"
-# ===========================================
-# 配置说明和使用指南
-# ===========================================
-#
-# 1. 基本启动命令:
-#    docker-compose up -d
-#
-# 2. 启动包含监控的完整栈:
-#    docker-compose --profile monitoring up -d
-#
-# 3. 启动包含日志收集的完整栈:
-#    docker-compose --profile logging up -d
-#
-# 4. 启动所有服务:
-#    docker-compose --profile monitoring --profile logging up -d
-#
-# 5. 查看服务状态:
-#    docker-compose ps
-#
-# 6. 查看日志:
-#    docker-compose logs -f [service_name]
-#
-# 7. 停止所有服务:
-#    docker-compose down
-#
-# 8. 完全清理（包括数据卷）:
-#    docker-compose down -v
-#
-# 9. 更新远程镜像缓存:
-#    docker-compose pull
-#
-# 10. 扩展后端服务:
-#     docker-compose up -d --scale backend=3
-#
-# ===========================================
-# 安全注意事项
-# ===========================================
-#
-# 1. 生产环境部署前请修改：
-#    - POSTGRES_PASSWORD
-#    - SECRET_KEY
-#    - GRAFANA_PASSWORD
-#
-# 2. 生产环境建议：
-#    - 关闭数据库和Redis的端口映射
-#    - 使用外部SSL证书
-#    - 启用防火墙
-#    - 定期备份数据卷
-#
-# 3. 监控端点：
-#    - Grafana: http://localhost:3001
-#    - Prometheus: http://localhost:9090
-#    - API文档: http://localhost:8000/docs
-#
-# 4. 日志位置：
-#    - 后端日志: backend_logs卷
-#    - 前端日志: frontend_logs卷
-#    - Nginx日志: ./nginx/logs
-#
-# ===========================================
