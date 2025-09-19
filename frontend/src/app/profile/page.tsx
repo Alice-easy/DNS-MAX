@@ -7,8 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { User as UserIcon, Mail, Calendar, Shield, Edit, Save, X } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAuthStore } from '@/stores/authStore';
-import { api } from '@/lib/api';
-import { User as UserType } from '@/lib/api';
+import { User } from '@/types/api';
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuthStore();
@@ -18,14 +17,14 @@ export default function ProfilePage() {
   
   const [formData, setFormData] = useState({
     username: user?.username || '',
-    email: (user as any)?.email || '', // 临时处理，因为types中没有email字段
+    email: '', // 由于API类型中没有email字段，暂时设为空字符串
   });
 
   useEffect(() => {
     if (user) {
       setFormData({
         username: user.username,
-        email: (user as any)?.email || '',
+        email: '', // 由于API类型中没有email字段，暂时设为空字符串
       });
     }
   }, [user]);
@@ -39,13 +38,13 @@ export default function ProfilePage() {
       // const updatedUser = await api.updateUser(formData);
       // updateUser(updatedUser);
       
-      // 暂时模拟更新
-      const updatedUser = {
+      // 暂时模拟更新，因为没有对应的API
+      const updatedUser: User = {
         ...user!,
         username: formData.username,
-        email: formData.email,
+        // 注意：email字段不在User类型中，暂时忽略
       };
-      updateUser(updatedUser as any);
+      updateUser(updatedUser);
       
       setIsEditing(false);
     } catch (err) {
@@ -59,7 +58,7 @@ export default function ProfilePage() {
   const handleCancel = () => {
     setFormData({
       username: user?.username || '',
-      email: (user as any)?.email || '',
+      email: '', // 由于API类型中没有email字段，暂时设为空字符串
     });
     setIsEditing(false);
     setError(null);
@@ -161,7 +160,7 @@ export default function ProfilePage() {
                     <div className="flex items-center space-x-3">
                       <Mail className="h-5 w-5 text-gray-400" />
                       <div>
-                        <p className="font-medium text-gray-900">{(user as any)?.email || '未设置'}</p>
+                        <p className="font-medium text-gray-900">未设置</p>
                         <p className="text-sm text-gray-500">邮箱地址</p>
                       </div>
                     </div>

@@ -9,12 +9,13 @@ import {
   Server, 
   Globe, 
   Settings, 
-  User, 
+  User as UserIcon, 
   LogOut, 
   Menu,
   X
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
+import { User } from '@/types/api';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -25,7 +26,7 @@ const navigation = [
   { name: '服务商管理', href: '/providers', icon: Server },
   { name: '域名管理', href: '/domains', icon: Globe },
   { name: 'DNS记录', href: '/dns-records', icon: Settings },
-  { name: '个人资料', href: '/profile', icon: User },
+  { name: '个人资料', href: '/profile', icon: UserIcon },
 ];
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -101,7 +102,7 @@ function SidebarContent({
 }: { 
   pathname: string; 
   onLogout: () => void; 
-  user: any; 
+  user: User | null; 
 }) {
   return (
     <>
@@ -138,12 +139,12 @@ function SidebarContent({
         <div className="flex items-center">
           <div className="flex-shrink-0">
             <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
-              <User className="h-5 w-5 text-gray-600" />
+              <UserIcon className="h-5 w-5 text-gray-600" />
             </div>
           </div>
           <div className="ml-3 flex-1">
             <p className="text-sm font-medium text-gray-700">{user?.username || '用户'}</p>
-            <p className="text-xs text-gray-500">{user?.email || ''}</p>
+            <p className="text-xs text-gray-500">管理员</p>
           </div>
           <Button
             variant="ghost"

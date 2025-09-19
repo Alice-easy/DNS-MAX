@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,17 +31,7 @@ export default function DNSRecordsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
 
-  useEffect(() => {
-    fetchDomains();
-  }, []);
-
-  useEffect(() => {
-    if (selectedDomain) {
-      fetchRecords();
-    }
-  }, [selectedDomain]);
-
-  const fetchDomains = async () => {
+  const fetchDomains = useCallback(async () => {
     try {
       const data = await api.getDomains();
       setDomains(data);
@@ -54,9 +44,9 @@ export default function DNSRecordsPage() {
       setError('获取域名列表失败');
       console.error('Fetch domains error:', err);
     }
-  };
+  }, [selectedDomain]);
 
-  const fetchRecords = async () => {
+  const fetchRecords = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -68,7 +58,17 @@ export default function DNSRecordsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedDomain]);
+
+  useEffect(() => {
+    fetchDomains();
+  }, [fetchDomains]);
+
+  useEffect(() => {
+    if (selectedDomain) {
+      fetchRecords();
+    }
+  }, [selectedDomain, fetchRecords]);
 
   const handleDelete = async (id: number) => {
     if (!confirm('确定要删除这条DNS记录吗？')) {

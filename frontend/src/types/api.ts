@@ -20,6 +20,11 @@ export interface AuthResponse {
   token_type: string;
 }
 
+// DNS服务商凭据类型
+interface BaseCredentials {
+  [key: string]: string | number | boolean;
+}
+
 // DNS服务商相关类型
 export interface DNSProvider {
   id: number;
@@ -30,7 +35,7 @@ export interface DNSProvider {
 
 export interface ProviderCreateRequest {
   provider_name: 'aliyun' | 'cloudflare' | 'tencent';
-  credentials: Record<string, any>;
+  credentials: BaseCredentials;
 }
 
 // 域名相关类型
@@ -75,6 +80,11 @@ export interface DNSRecordUpdateRequest {
   ttl?: number;
 }
 
+// 错误详情类型
+interface ErrorDetails {
+  [key: string]: string | number | boolean | string[];
+}
+
 // 通用响应类型
 export interface BaseResponse {
   success: boolean;
@@ -84,5 +94,5 @@ export interface BaseResponse {
 export interface ErrorResponse extends BaseResponse {
   success: false;
   error_code?: string;
-  details?: Record<string, any>;
+  details?: ErrorDetails;
 }
