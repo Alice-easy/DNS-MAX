@@ -219,13 +219,6 @@ docker-compose up -d
 - **DNS 操作延迟**: < 5s (单条记录)
 - **批量操作**: 1000 记录/分钟
 
-## 📖 完整文档
-
-- **[部署指南](./DEPLOYMENT.md)** - 生产环境部署详细说明
-- **[环境配置](./ENVIRONMENT.md)** - 环境变量完整配置参考
-
-
-
 ### 使用相关
 
 <details>
@@ -270,7 +263,6 @@ asyncio.run(test_connectivity())
 ### 获取帮助
 
 - **GitHub Issues**: [https://github.com/Alice-easy/DNS-Max/issues](https://github.com/Alice-easy/DNS-Max/issues)
-- **文档中心**: [完整故障排除指南](./DEPLOYMENT.md#故障排除)
 
 ## 🤝 参与贡献
 
@@ -307,28 +299,6 @@ style: 代码格式调整
 refactor: 重构代码
 test: 测试相关
 chore: 构建/工具链更新
-```
-
-### 开发环境搭建
-
-```bash
-# 1. 克隆您的 Fork
-git clone https://github.com/yourusername/dns-max.git
-cd dns-max
-
-# 2. 添加上游仓库
-git remote add upstream https://github.com/original/dns-max.git
-
-# 3. 创建开发环境
-cp .env.example .env.dev
-# 编辑 .env.dev 配置开发环境
-
-# 4. 启动开发服务
-docker-compose -f docker-compose.dev.yml up -d
-
-# 5. 运行测试
-docker-compose exec backend pytest
-docker-compose exec frontend npm test
 ```
 
 ## 🏆 贡献者
