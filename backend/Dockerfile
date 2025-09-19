@@ -24,20 +24,13 @@ RUN pip install poetry==$POETRY_VERSION
 RUN poetry config virtualenvs.create false
 
 # 复制Poetry配置文件
-COPY pyproject.toml poetry.lock* ./
+COPY pyproject.toml ./
 
 # 安装Python依赖
-RUN poetry install --only=main --no-interaction --no-ansi
+RUN poetry install --no-dev --no-interaction --no-ansi
 
 # 复制应用代码
 COPY . .
-
-# 创建非root用户
-RUN addgroup --system app && adduser --system --group app
-
-# 更改应用代码所有者
-RUN chown -R app:app /app
-USER app
 
 # 暴露端口
 EXPOSE 8000
