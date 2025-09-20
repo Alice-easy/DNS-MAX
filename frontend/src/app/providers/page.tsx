@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, AlertCircle, Server } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { api, Provider } from '@/lib/api';
+import { getProviderTypeName, getProviderTypeColor } from '@/lib/provider-utils';
 
 export default function ProvidersPage() {
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -48,32 +49,6 @@ export default function ProvidersPage() {
     } catch (err) {
       console.error('Delete provider error:', err);
       alert('删除服务商失败');
-    }
-  };
-
-  const getProviderTypeName = (type: string) => {
-    switch (type) {
-      case 'aliyun':
-        return '阿里云';
-      case 'cloudflare':
-        return 'Cloudflare';
-      case 'tencent':
-        return '腾讯云';
-      default:
-        return type;
-    }
-  };
-
-  const getProviderTypeColor = (type: string) => {
-    switch (type) {
-      case 'aliyun':
-        return 'bg-orange-100 text-orange-800';
-      case 'cloudflare':
-        return 'bg-blue-100 text-blue-800';
-      case 'tencent':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
     }
   };
 

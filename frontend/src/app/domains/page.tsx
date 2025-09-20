@@ -21,6 +21,7 @@ import {
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { api, Domain } from '@/lib/api';
 import Link from 'next/link';
+import { getProviderTypeName, getProviderTypeColor } from '@/lib/provider-utils';
 
 export default function DomainsPage() {
   const [domains, setDomains] = useState<Domain[]>([]);
@@ -56,32 +57,6 @@ export default function DomainsPage() {
     } catch (err) {
       console.error('Delete domain error:', err);
       alert('删除域名失败');
-    }
-  };
-
-  const getProviderTypeName = (type: string) => {
-    switch (type) {
-      case 'aliyun':
-        return '阿里云';
-      case 'cloudflare':
-        return 'Cloudflare';
-      case 'tencent':
-        return '腾讯云';
-      default:
-        return type;
-    }
-  };
-
-  const getProviderTypeColor = (type: string) => {
-    switch (type) {
-      case 'aliyun':
-        return 'bg-orange-100 text-orange-800';
-      case 'cloudflare':
-        return 'bg-blue-100 text-blue-800';
-      case 'tencent':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
     }
   };
 
