@@ -36,12 +36,17 @@ export default function LoginPage() {
     mutationFn: api.login,
     onSuccess: async data => {
       try {
+        // 先临时存储token到localStorage，以便API调用能够使用
+        localStorage.setItem('token', data.access_token);
+        
         // 获取用户信息
         const user = await api.getCurrentUser();
         setAuth(user, data.access_token);
         router.push('/dashboard');
       } catch (error) {
         console.error('Failed to fetch user info:', error);
+        // 清理可能残留的token
+        localStorage.removeItem('token');
         setError('登录成功但获取用户信息失败');
       }
     },
