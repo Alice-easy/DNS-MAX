@@ -2,15 +2,10 @@
 
 <div align="center">
 
-![DNS Max](https://img.shields.io/badge/DNS%20Max-v1.0.0-blue)
 ![Python](https://img.shields.io/badge/Python-3.11+-brightgreen)
 ![Next.js](https://img.shields.io/badge/Next.js-15.5+-blue)
-![React](https://img.shields.io/badge/React-19.1-blue)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-blue)
 ![Docker](https://img.shields.io/badge/Docker-Ready-blue)
-![License](https://img.shields.io/badge/License-MIT-green)
 
 **现代化的统一 DNS 管理平台**
 
@@ -54,35 +49,62 @@
 
 ## 🚀 快速开始
 
+### 自动配置部署
 
-
-### 一键部署
+DNS-Max 提供智能配置系统，自动检测您的环境并生成最适合的配置。
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/yourusername/dns-max.git
-cd dns-max
+git clone https://github.com/Alice-easy/DNS-Max.git
+cd DNS-Max
 
 # 2. 配置环境变量
 cp .env.example .env
-# ⚠️ 重要：编辑 .env 文件，修改以下关键配置：
+
+# 编辑配置文件
+# 重要：修改以下关键配置：
+# - POSTGRES_PASSWORD: 数据库密码  
 # - SECRET_KEY: JWT 签名密钥
-# - POSTGRES_PASSWORD: 数据库密码
-# - BACKEND_CORS_ORIGINS: 允许的前端域名
+# - ENCRYPTION_KEY: API密钥加密密钥
+# - USE_LOCAL_DB: true(本地数据库) 或 false(Docker数据库)
+```
 
-# 3. 启动服务（使用预构建镜像）
-docker-compose up -d
+### 数据库模式选择
+
+#### 本地PostgreSQL模式（推荐用于开发）
+- ✅ 更好的性能和稳定性
+- ✅ 持久化数据存储
+- ✅ 便于数据备份和迁移
+- ⚠️ 需要本地安装PostgreSQL
+
+#### Docker数据库模式（推荐用于快速体验）
+- ✅ 零配置快速启动
+- ✅ 环境隔离
+- ✅ 便于清理和重置
+- ⚠️ 容器删除时数据丢失（需要数据卷备份）
 
 
+
+### 访问系统
 
 部署完成后，您可以通过以下地址访问：
 
 - **前端管理界面**: http://localhost:3000
-- **后端 API**: http://localhost:8000
-- **API 文档**: http://localhost:8000/docs
-- **交互式 API 文档**: http://localhost:8000/redoc
+- **后端 API**: http://localhost:8000  
+- **API 文档**: http://localhost:8000/api/v1/docs
+- **交互式 API 文档**: http://localhost:8000/api/v1/redoc
 
-> 💡 **镜像说明**: 项目默认使用 GitHub Actions 自动构建的预构建镜像。如需自定义，可在 `.env` 中修改 `BACKEND_IMAGE` 和 `FRONTEND_IMAGE` 变量。
+### 管理员设置
+
+🎯 **首个注册用户自动成为管理员**
+
+系统的第一个注册用户将自动获得管理员权限，无需额外配置。管理员可以：
+- 访问系统管理面板 (`/admin`)
+- 管理其他用户权限
+- 查看系统统计和日志
+- 配置系统全局设置
+
+> 💡 **安全提示**: 建议在部署后立即注册管理员账户，并使用强密码。
 
 ## 🛠️ 技术架构
 

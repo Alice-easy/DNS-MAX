@@ -39,6 +39,18 @@ async def get_current_user(
     return user
 
 
+async def get_current_admin_user(
+    current_user: Annotated[User, Depends(get_current_user)]
+) -> User:
+    """获取当前管理员用户（权限检查）"""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    return current_user
+
+
 @router.post("/register", response_model=Token)
 async def register(
     user_data: UserCreate,

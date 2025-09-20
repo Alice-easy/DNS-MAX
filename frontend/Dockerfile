@@ -4,6 +4,10 @@ FROM node:18-slim AS builder
 # 设置工作目录
 WORKDIR /app
 
+# 接受构建参数
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # 复制package文件
 COPY package*.json ./
 

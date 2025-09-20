@@ -13,6 +13,7 @@ import {
   LogOut,
   Menu,
   X,
+  Shield,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { User } from '@/types/api';
@@ -29,6 +30,10 @@ const navigation = [
   { name: '个人资料', href: '/profile', icon: UserIcon },
 ];
 
+const adminNavigation = [
+  { name: '系统管理', href: '/admin', icon: Shield },
+];
+
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
@@ -39,6 +44,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     clearAuth();
     router.push('/auth/login');
   };
+
+  // 合并导航菜单，管理员可以看到额外的菜单项
+  const allNavigation = user?.is_admin 
+    ? [...navigation, ...adminNavigation] 
+    : navigation;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -64,6 +74,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               pathname={pathname}
               onLogout={handleLogout}
               user={user}
+              navigation={allNavigation}
             />
           </div>
         </div>
@@ -76,6 +87,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             pathname={pathname}
             onLogout={handleLogout}
             user={user}
+            navigation={allNavigation}
           />
         </div>
       </div>
@@ -110,10 +122,16 @@ function SidebarContent({
   pathname,
   onLogout,
   user,
+  navigation: navItems,
 }: {
   pathname: string;
   onLogout: () => void;
   user: User | null;
+  navigation: Array<{
+    name: string;
+    href: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }>;
 }) {
   return (
     <>
@@ -122,7 +140,7 @@ function SidebarContent({
           <h1 className="text-2xl font-bold text-gray-900">DNS分发系统</h1>
         </div>
         <nav className="mt-5 flex-1 space-y-1 px-2">
-          {navigation.map(item => {
+          {navItems.map(item => {
             const isActive =
               pathname === item.href || pathname.startsWith(item.href + '/');
             return (
@@ -160,7 +178,9 @@ function SidebarContent({
             <p className="text-sm font-medium text-gray-700">
               {user?.username || '用户'}
             </p>
-            <p className="text-xs text-gray-500">管理员</p>
+            <p className="text-xs text-gray-500">
+              {user?.is_admin ? '管理员' : '普通用户'}
+            </p>
           </div>
           <Button
             variant="ghost"

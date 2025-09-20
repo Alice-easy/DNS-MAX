@@ -104,7 +104,13 @@ export default function DashboardPage() {
             仪表盘
           </h1>
           <p className="mt-2 text-sm sm:text-base text-gray-600 leading-relaxed">
-            欢迎回来，{user?.username}！这里是您的DNS分发系统概览。
+            欢迎回来，{user?.username}
+            {user?.is_admin && (
+              <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                管理员
+              </span>
+            )}
+            ！这里是您的DNS分发系统概览。
           </p>
         </div>
 

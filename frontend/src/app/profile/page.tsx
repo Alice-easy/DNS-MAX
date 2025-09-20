@@ -205,6 +205,19 @@ export default function ProfilePage() {
               <div className="flex items-center space-x-3">
                 <Shield className="h-5 w-5 text-gray-400" />
                 <div>
+                  <p className="font-medium text-gray-900">账户类型</p>
+                  <p className="text-sm text-gray-500">当前用户权限级别</p>
+                </div>
+              </div>
+              <Badge variant={user.is_admin ? "default" : "secondary"}>
+                {user.is_admin ? "管理员" : "普通用户"}
+              </Badge>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Shield className="h-5 w-5 text-gray-400" />
+                <div>
                   <p className="font-medium text-gray-900">账户状态</p>
                   <p className="text-sm text-gray-500">当前账户状态</p>
                 </div>

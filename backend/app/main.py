@@ -1,20 +1,33 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1.api import api_router
-from app.db.session import engine
-from app.db.base import Base
+from app.db.session import initialize_database, check_database_connection
+import logging
+
+# 配置日志
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     # 启动时执行
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    logger.info(f"启动 {settings.app_name}")
+    logger.info(f"数据库配置: {settings.database_info}")
+    
+    # 初始化数据库
+    if not await initialize_database():
+        logger.error("数据库初始化失败，应用无法启动")
+        raise Exception("数据库初始化失败")
+    
+    logger.info("应用启动完成")
     yield
+    
     # 关闭时执行
+    logger.info("应用关闭")
 
 
 app = FastAPI(
@@ -46,14 +59,23 @@ async def root():
     return {
         "message": "DNS Max API",
         "version": "1.0.0",
-        "docs": "/api/v1/docs"
+        "docs": "/api/v1/docs",
+        "database": settings.database_info
     }
 
 
 @app.get("/health")
 async def health_check():
     """健康检查端点"""
-    return {"status": "healthy"}
+    db_status = await check_database_connection()
+    if not db_status:
+        raise HTTPException(status_code=503, detail="Database connection failed")
+    
+    return {
+        "status": "healthy",
+        "database": "connected",
+        "database_type": settings.database_info['type']
+    }
 
 
 if __name__ == "__main__":
