@@ -16,7 +16,7 @@ import {
   Shield,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
-import { User } from '@/types/api';
+import { User } from '@/lib/api';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;

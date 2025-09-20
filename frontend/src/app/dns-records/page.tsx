@@ -21,7 +21,8 @@ import {
   Filter,
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { api, DNSRecord, Domain } from '@/lib/api';
+import { api } from '@/lib/api';
+import type { DNSRecord, Domain } from '@/lib/api';
 
 function DNSRecordsContent() {
   const searchParams = useSearchParams();

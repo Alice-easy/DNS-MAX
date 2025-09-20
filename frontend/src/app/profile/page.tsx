@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAuthStore } from '@/stores/authStore';
-import { User } from '@/types/api';
+import { User } from '@/lib/api';
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuthStore();
