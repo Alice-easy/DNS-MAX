@@ -11,86 +11,123 @@
 
 企业级多云 DNS 服务商统一管理解决方案，支持阿里云、腾讯云、Cloudflare 等主流服务商的集中化管理与自动化操作。
 
-
-
 </div>
 
 ## ✨ 核心特性
 
 ### 🌐 多云 DNS 统一管理
+
 - **阿里云 DNS** - 完整支持阿里云 DNS 服务管理
 - **腾讯云 DNSPod** - 集成腾讯云 DNSPod API 服务
 - **Cloudflare DNS** - 支持 Cloudflare 全球加速 DNS
 - **统一接口** - 一套 API 管理所有服务商
 
 ### 🔒 企业级安全保障
+
 - **JWT 认证** - 基于 RS256 算法的安全认证
 - **API 密钥加密** - 服务商凭据安全加密存储
 - **操作审计** - 完整的 DNS 操作日志记录
 - **权限控制** - 细粒度的用户权限管理
 
 ### ⚡ 现代化架构
+
 - **异步处理** - FastAPI 异步框架，高并发支持
 - **智能缓存** - Redis 缓存层，提升响应速度
 - **实时更新** - WebSocket 实时状态推送
 - **容器化部署** - Docker 容器化，一键部署
 
 ### 📱 优秀用户体验
+
 - **响应式设计** - 支持桌面端和移动端
 - **现代化 UI** - 基于 shadcn/ui 的精美界面
 - **直观操作** - 拖拽式 DNS 记录管理
 - **实时反馈** - 操作状态实时显示
 
 ### 📋 完整 DNS 功能
+
 - **记录类型支持** - A/AAAA/CNAME/MX/TXT/NS/SRV/CAA 等
 - **批量操作** - 支持批量导入导出 DNS 记录
 - **域名管理** - 多域名集中管理
 - **TTL 优化** - 智能 TTL 建议和优化
 
-## 🚀 快速开始
+## 🚀 快速部署
 
-### 自动配置部署
+DNS-Max 为生产环境设计，提供完整的容器化解决方案。
 
-DNS-Max 提供智能配置系统，自动检测您的环境并生成最适合的配置。
+### 🎯 一键部署（推荐）
+
+使用预构建的 Docker 镜像快速部署：
 
 ```bash
-# 1. 克隆项目
+# 1. 下载项目配置
 git clone https://github.com/Alice-easy/DNS-Max.git
 cd DNS-Max
 
 # 2. 配置环境变量
 cp .env.example .env
 
-# 编辑配置文件
-# 重要：修改以下关键配置：
-# - POSTGRES_PASSWORD: 数据库密码  
-# - SECRET_KEY: JWT 签名密钥
-# - ENCRYPTION_KEY: API密钥加密密钥
-# - USE_LOCAL_DB: true(本地数据库) 或 false(Docker数据库)
+# 编辑 .env 文件，设置必要的配置：
+# - POSTGRES_PASSWORD: 强数据库密码
+# - SECRET_KEY: JWT 签名密钥（运行：openssl rand -hex 64）
+# - ENCRYPTION_KEY: 32字符加密密钥（运行：openssl rand -hex 16）
+# - BACKEND_IMAGE: 您的后端镜像地址
+# - FRONTEND_IMAGE: 您的前端镜像地址
+
+# 3. 启动服务
+docker-compose up -d
+
+# 4. 检查服务状态
+docker-compose ps
 ```
 
-### 数据库模式选择
+### 🔧 生产环境配置
 
-#### 本地PostgreSQL模式（推荐用于开发）
-- ✅ 更好的性能和稳定性
-- ✅ 持久化数据存储
-- ✅ 便于数据备份和迁移
-- ⚠️ 需要本地安装PostgreSQL
+#### 域名配置
 
-#### Docker数据库模式（推荐用于快速体验）
-- ✅ 零配置快速启动
-- ✅ 环境隔离
-- ✅ 便于清理和重置
-- ⚠️ 容器删除时数据丢失（需要数据卷备份）
+```bash
+# 在 .env 文件中设置您的域名
+NEXT_PUBLIC_API_URL=https://your-domain.com/api/v1
+```
 
+#### 反向代理配置（Nginx 示例）
 
+```nginx
+upstream dns_max_backend {
+    server localhost:8000;
+}
+
+upstream dns_max_frontend {
+    server localhost:3000;
+}
+
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    location /api/ {
+        proxy_pass http://dns_max_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        proxy_pass http://dns_max_frontend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
 
 ### 访问系统
 
 部署完成后，您可以通过以下地址访问：
 
 - **前端管理界面**: http://localhost:3000
-- **后端 API**: http://localhost:8000  
+- **后端 API**: http://localhost:8000
 - **API 文档**: http://localhost:8000/api/v1/docs
 - **交互式 API 文档**: http://localhost:8000/api/v1/redoc
 
@@ -99,6 +136,7 @@ cp .env.example .env
 🎯 **首个注册用户自动成为管理员**
 
 系统的第一个注册用户将自动获得管理员权限，无需额外配置。管理员可以：
+
 - 访问系统管理面板 (`/admin`)
 - 管理其他用户权限
 - 查看系统统计和日志
@@ -109,6 +147,7 @@ cp .env.example .env
 ## 🛠️ 技术架构
 
 ### 后端技术栈
+
 - **Python 3.11+** - 现代 Python 开发
 - **FastAPI 0.104+** - 高性能异步 Web 框架
 - **SQLAlchemy 2.0+** - 异步 ORM 数据库操作
@@ -119,6 +158,7 @@ cp .env.example .env
 - **Cryptography** - API 密钥加密存储
 
 ### 前端技术栈
+
 - **Next.js 15.5** - 全栈 React 框架
 - **React 19.1** - 最新 React 版本
 - **TypeScript 5.0+** - 静态类型检查
@@ -130,12 +170,14 @@ cp .env.example .env
 - **Zod** - 运行时类型验证
 
 ### DNS 服务商集成
+
 - **阿里云 DNS SDK** - alibabacloud-alidns20150109
 - **腾讯云 DNSPod SDK** - tencentcloud-sdk-python-dnspod
 - **Cloudflare API** - RESTful API 集成
 - **HTTPX** - 异步 HTTP 客户端
 
 ### 基础设施
+
 - **Docker & Docker Compose** - 容器化部署
 - **Nginx** - 反向代理和负载均衡
 - **GitHub Actions** - CI/CD 自动化
@@ -147,14 +189,17 @@ cp .env.example .env
 ### 1. 初始化设置
 
 #### 首次登录
+
 1. 访问 http://localhost:3000
 2. 点击"注册"创建管理员账户
 3. 登录系统进入控制面板
 
 #### 添加 DNS 服务商
+
 进入"服务商管理"页面，配置您的 DNS 服务商：
 
 ##### 阿里云 DNS 配置
+
 ```json
 {
   "name": "阿里云主账户",
@@ -165,6 +210,7 @@ cp .env.example .env
 ```
 
 ##### 腾讯云 DNSPod 配置
+
 ```json
 {
   "name": "腾讯云主账户",
@@ -175,6 +221,7 @@ cp .env.example .env
 ```
 
 ##### Cloudflare 配置
+
 ```json
 {
   "name": "Cloudflare主账户",
@@ -186,12 +233,14 @@ cp .env.example .env
 ### 2. 域名和 DNS 记录管理
 
 #### 添加域名
+
 1. 在"域名管理"页面点击"添加域名"
 2. 选择对应的 DNS 服务商
 3. 输入域名（如：example.com）
 4. 系统自动同步现有 DNS 记录
 
 #### DNS 记录操作
+
 - **查看记录**: 实时显示所有记录类型和状态
 - **添加记录**: 支持 A/AAAA/CNAME/MX/TXT/NS/SRV/CAA 记录
 - **批量导入**: 支持 CSV/JSON 格式批量导入
@@ -199,30 +248,34 @@ cp .env.example .env
 - **实时同步**: 自动同步服务商端变更
 
 #### 支持的记录类型
-| 记录类型 | 说明 | 示例 |
-|----------|------|------|
-| **A** | IPv4 地址记录 | www.example.com → 192.168.1.1 |
-| **AAAA** | IPv6 地址记录 | www.example.com → 2001:db8::1 |
-| **CNAME** | 别名记录 | blog.example.com → www.example.com |
-| **MX** | 邮件交换记录 | example.com → mail.example.com |
-| **TXT** | 文本记录 | SPF/DKIM/域名验证 |
-| **NS** | 名称服务器记录 | 子域名授权 |
-| **SRV** | 服务记录 | 服务发现 |
-| **CAA** | 证书颁发机构授权 | SSL 证书安全 |
+
+| 记录类型  | 说明             | 示例                               |
+| --------- | ---------------- | ---------------------------------- |
+| **A**     | IPv4 地址记录    | www.example.com → 192.168.1.1      |
+| **AAAA**  | IPv6 地址记录    | www.example.com → 2001:db8::1      |
+| **CNAME** | 别名记录         | blog.example.com → www.example.com |
+| **MX**    | 邮件交换记录     | example.com → mail.example.com     |
+| **TXT**   | 文本记录         | SPF/DKIM/域名验证                  |
+| **NS**    | 名称服务器记录   | 子域名授权                         |
+| **SRV**   | 服务记录         | 服务发现                           |
+| **CAA**   | 证书颁发机构授权 | SSL 证书安全                       |
 
 ### 3. 高级功能
 
 #### 智能 TTL 优化
+
 - 系统根据记录类型推荐最佳 TTL 值
 - 支持批量 TTL 调整
 - 提供 TTL 性能分析报告
 
 #### 操作审计日志
+
 - 记录所有 DNS 操作历史
 - 支持按用户、域名、操作类型筛选
-- 提供操作回滚功能（24小时内）
+- 提供操作回滚功能（24 小时内）
 
 #### 监控告警
+
 - DNS 记录变更实时通知
 - 域名解析状态监控
 - 异常操作安全告警
@@ -230,12 +283,14 @@ cp .env.example .env
 ## 📊 性能指标
 
 ### 系统容量
+
 - **并发用户**: 支持 1000+ 并发用户
 - **DNS 记录**: 单域名支持 10,000+ 记录
 - **域名数量**: 系统支持 1,000+ 域名管理
 - **服务商**: 同时管理 100+ DNS 服务商账户
 
 ### 响应性能
+
 - **API 响应时间**: < 200ms (95% 请求)
 - **页面加载时间**: < 2s (首次加载)
 - **DNS 操作延迟**: < 5s (单条记录)
@@ -280,6 +335,7 @@ async def test_connectivity():
 asyncio.run(test_connectivity())
 "
 ```
+
 </details>
 
 ### 获取帮助
@@ -293,16 +349,19 @@ asyncio.run(test_connectivity())
 ### 贡献指南
 
 #### 🐛 报告问题
+
 1. 查看 [现有 Issues](https://github.com/Alice-easy/DNS-Max/issues)
 2. 使用 Issue 模板详细描述问题
 3. 提供复现步骤和环境信息
 
 #### 💡 功能建议
+
 1. 创建 Feature Request Issue
 2. 详细描述建议的功能和使用场景
 3. 参与社区讨论完善建议
 
 #### 🔧 代码贡献
+
 1. **Fork 项目** 到您的 GitHub 账户
 2. **创建分支** (`git checkout -b feature/amazing-feature`)
 3. **本地开发** 并确保测试通过
@@ -311,6 +370,7 @@ asyncio.run(test_connectivity())
 6. **创建 Pull Request** 并填写详细说明
 
 #### 📝 提交规范
+
 我们使用 [Conventional Commits](https://www.conventionalcommits.org/) 规范：
 
 ```bash
@@ -336,6 +396,7 @@ chore: 构建/工具链更新
 本项目采用 [MIT License](LICENSE) 开源许可证。
 
 ### 许可说明
+
 - ✅ 商业使用
 - ✅ 修改源码
 - ✅ 分发软件
@@ -346,6 +407,7 @@ chore: 构建/工具链更新
 ## 🙏 特别致谢
 
 ### 核心技术栈
+
 - **[FastAPI](https://fastapi.tiangolo.com/)** - 现代化异步 Python Web 框架
 - **[Next.js](https://nextjs.org/)** - 全栈 React 应用框架
 - **[PostgreSQL](https://www.postgresql.org/)** - 企业级关系数据库
@@ -353,11 +415,13 @@ chore: 构建/工具链更新
 - **[Docker](https://www.docker.com/)** - 容器化平台
 
 ### UI 与设计
+
 - **[Tailwind CSS](https://tailwindcss.com/)** - 原子化 CSS 框架
 - **[shadcn/ui](https://ui.shadcn.com/)** - 现代化 React 组件库
 - **[Lucide](https://lucide.dev/)** - 精美的图标库
 
 ### 开发工具
+
 - **[TypeScript](https://www.typescriptlang.org/)** - 类型安全的 JavaScript
 - **[Pydantic](https://pydantic-docs.helpmanual.io/)** - Python 数据验证
 - **[SQLAlchemy](https://www.sqlalchemy.org/)** - Python ORM 框架
@@ -372,7 +436,5 @@ chore: 构建/工具链更新
 
 [![GitHub stars](https://img.shields.io/github/stars/Alice-easy/DNS-Max?style=social)](https://github.com/Alice-easy/DNS-Max/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/Alice-easy/DNS-Max?style=social)](https://github.com/Alice-easy/DNS-Max/network/members)
-
-
 
 </div>

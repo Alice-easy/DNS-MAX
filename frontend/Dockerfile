@@ -11,8 +11,8 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 # 复制package文件
 COPY package*.json ./
 
-# 安装依赖
-RUN npm ci --omit=dev --legacy-peer-deps
+# 安装依赖（包含开发依赖，因为构建时需要TypeScript等）
+RUN npm install --legacy-peer-deps
 
 # 复制源代码
 COPY . .

@@ -1,4 +1,17 @@
+# DNS-Max Docker Compose - 生产环境配置
+# 使用 GitHub Container Registry 中的预构建镜像进行生产部署
+#
+# 使用方法：
+# 1. 配置 .env 文件
+# 2. 确保 BACKEND_IMAGE 和 FRONTEND_IMAGE 环境变量已设置
+# 3. 运行: docker-compose up -d
+#
+# 开发环境请使用: docker-compose -f docker-compose.dev.yml up -d --build
+
+version: "3.8"
+
 services:
+  # PostgreSQL 数据库
   postgres:
     image: postgres:15-alpine
     container_name: dns-max-postgres
@@ -6,52 +19,58 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-dns_max}
       POSTGRES_USER: ${POSTGRES_USER:-dns_max_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dns_max_password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dns_max_user} -d ${POSTGRES_DB:-dns_max}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-dns_max_user} -d ${POSTGRES_DB:-dns_max}",
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
     networks:
-      - dns-max-backend
-    profiles:
-      - docker-db  # 只有在docker-db profile时才启动
+      - dns-max-network
 
+  # Redis 缓存
   redis:
     image: redis:7-alpine
     container_name: dns-max-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
+    ports:
+      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
       timeout: 10s
       retries: 5
     networks:
-      - dns-max-backend
+      - dns-max-network
 
+  # 后端 API 服务（预构建镜像）
   backend:
-    build: ./backend
+    image: ${BACKEND_IMAGE:-ghcr.io/your-username/dns-max-backend:latest}
     container_name: dns-max-backend
     restart: unless-stopped
     environment:
       - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
       - SECRET_KEY=${SECRET_KEY}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - USE_LOCAL_DB=${USE_LOCAL_DB:-false}
-    env_file:
-      - .env
+      - NODE_ENV=${NODE_ENV:-production}
     ports:
       - "8000:8000"
     depends_on:
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
@@ -59,37 +78,41 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s
+      start_period: 30s
     networks:
-      - dns-max-backend
-      - dns-max-frontend
-    # 如果使用Docker数据库，则依赖postgres服务
-    x-depends-on-postgres: &postgres-dependency
-      postgres:
-        condition: service_healthy
+      - dns-max-network
 
+  # 前端 Web 服务（预构建镜像）
   frontend:
-    build:
-      context: ./frontend
-      args:
-        NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    image: ${FRONTEND_IMAGE:-ghcr.io/your-username/dns-max-frontend:latest}
     container_name: dns-max-frontend
     restart: unless-stopped
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
-      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+      - NODE_ENV=${NODE_ENV:-production}
     ports:
       - "3000:3000"
     depends_on:
       backend:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     networks:
-      - dns-max-frontend
+      - dns-max-network
 
+# 网络配置
+networks:
+  dns-max-network:
+    driver: bridge
+    name: dns-max-network
+
+# 数据卷配置
 volumes:
   postgres_data:
+    name: dns-max-postgres-data
   redis_data:
-
-networks:
-  dns-max-backend:
-  dns-max-frontend:
+    name: dns-max-redis-data
