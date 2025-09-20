@@ -35,12 +35,15 @@ export default function LoginPage() {
   const loginMutation = useMutation({
     mutationFn: api.login,
     onSuccess: async data => {
+      console.log('登录成功，获取的数据:', data);
       try {
         // 先临时存储token到localStorage，以便API调用能够使用
         localStorage.setItem('token', data.access_token);
         
         // 获取用户信息
+        console.log('开始获取用户信息...');
         const user = await api.getCurrentUser();
+        console.log('获取用户信息成功:', user);
         setAuth(user, data.access_token);
         router.push('/dashboard');
       } catch (error) {
@@ -51,7 +54,7 @@ export default function LoginPage() {
       }
     },
     onError: (error: unknown) => {
-      console.error('Login failed:', error);
+      console.error('登录失败:', error);
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { status?: number } };
         if (axiosError.response?.status === 401) {
@@ -66,6 +69,7 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormData) => {
+    console.log('登录表单提交:', data);
     setError(null);
     loginMutation.mutate(data);
   };
