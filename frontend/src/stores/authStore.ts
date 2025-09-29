@@ -28,6 +28,8 @@ export const useAuthStore = create<AuthState>()(
         if (typeof window !== 'undefined') {
           localStorage.setItem('token', token);
           localStorage.setItem('user', JSON.stringify(user));
+          // 设置cookie以便中间件检查（30天过期）
+          document.cookie = `token=${token}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=lax`;
         }
       },
 
@@ -37,10 +39,12 @@ export const useAuthStore = create<AuthState>()(
           token: null,
           isAuthenticated: false,
         });
-        // 清除localStorage
+        // 清除localStorage和cookie
         if (typeof window !== 'undefined') {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+          // 清除cookie
+          document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         }
       },
 

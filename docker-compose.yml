@@ -5,8 +5,6 @@
 # 1. 配置 .env 文件
 # 2. 确保 BACKEND_IMAGE 和 FRONTEND_IMAGE 环境变量已设置
 # 3. 运行: docker-compose up -d
-#
-# 开发环境请使用: docker-compose -f docker-compose.dev.yml up -d --build
 
 version: "3.8"
 

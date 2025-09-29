@@ -167,7 +167,7 @@ export default function ProvidersPage() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-500">配置状态</span>
                       <Badge variant="outline">
-                        {Object.keys(provider.config || {}).length > 0
+                        {Object.keys(provider.credentials || {}).length > 0
                           ? '已配置'
                           : '未配置'}
                       </Badge>

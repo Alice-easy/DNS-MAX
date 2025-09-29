@@ -16,9 +16,11 @@ const authPaths = ['/auth/login', '/auth/register'];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 检查是否有token
-  const token = request.cookies.get('token')?.value;
-  const isAuthenticated = !!token;
+  // 检查是否有token（从cookie或通过header中的localStorage传递）
+  const cookieToken = request.cookies.get('token')?.value;
+  // 在服务端无法直接访问localStorage，所以优先检查cookie
+  // 如果没有cookie token，则认为未认证（前端应该设置cookie）
+  const isAuthenticated = !!cookieToken;
 
   // 如果是受保护的路径但用户未认证，重定向到登录页
   if (
