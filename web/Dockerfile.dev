@@ -1,0 +1,14 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# 复制package文件
+COPY package.json pnpm-lock.yaml* ./
+
+# 安装依赖
+RUN corepack enable && pnpm i
+
+# 开发环境不复制源代码，使用volume挂载
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]

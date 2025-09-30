@@ -1,0 +1,19 @@
+{
+  email {env.CADDY_EMAIL}
+}
+
+yourdomain.com {
+  encode gzip
+  reverse_proxy web:3000
+  header {
+    Permissions-Policy interest-cohort=()
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+  }
+}
+
+api.yourdomain.com {
+  encode gzip
+  reverse_proxy api:8000
+}
+
+
