@@ -17,6 +17,8 @@ services:
   api:
     build: ./api
     env_file: .env
+    ports:
+      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
@@ -29,25 +31,8 @@ services:
   web:
     build: ./web
     env_file: .env
-    depends_on:
-      api:
-        condition: service_healthy
-
-  proxy:
-    image: caddy:2
-    restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./proxy/Caddyfile:/etc/caddy/Caddyfile
-      - caddydata:/data
-      - caddyconfig:/config
-    depends_on:
-      - web
-      - api
+      - "3000:3000"
 
 volumes:
   dbdata:
-  caddydata:
-  caddyconfig:

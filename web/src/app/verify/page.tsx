@@ -1,9 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
-export default function VerifyPage() {
+function VerifyContent() {
     const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
     const [message, setMessage] = useState("");
     const searchParams = useSearchParams();
@@ -89,5 +89,20 @@ export default function VerifyPage() {
                 )}
             </div>
         </main>
+    );
+}
+
+export default function VerifyPage() {
+    return (
+        <Suspense fallback={
+            <main className="min-h-screen grid place-items-center p-6 bg-gray-50">
+                <div className="card text-center">
+                    <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+                    <h1 className="text-xl font-semibold mb-2">加载中...</h1>
+                </div>
+            </main>
+        }>
+            <VerifyContent />
+        </Suspense>
     );
 }

@@ -20,20 +20,28 @@ async def register(payload: RegisterIn, db: Session = Depends(get_db), bg: Backg
     with db.begin():
         exists = db.scalar(select(func.count(User.id)))
         role = Role.admin if exists == 0 else Role.user
+        is_first_user = exists == 0
 
         hashed = pwd_hasher.hash(payload.password)  # argon2 or bcrypt
         user = User(email=payload.email.lower(), password_hash=hashed, role=role)
+        
+        # 首位用户自动验证邮箱，无需邮件验证
+        if is_first_user:
+            user.email_verified_at = dt.datetime.utcnow()
+            
         db.add(user)
         db.flush()  # get user.id
 
-        token = secrets.token_urlsafe(48)
-        db.add(EmailToken(user_id=user.id,
-                          token=token,
-                          expire_at=dt.datetime.utcnow() + dt.timedelta(hours=24)))
-    # 发邮件（后台异步）
-    verify_url = f"{settings.PUBLIC_WEB_URL}/verify?token={token}"
-    if bg:
-        bg.add_task(send_verification, to=user.email, verify_url=verify_url)
+        # 只有非首位用户需要邮件验证
+        if not is_first_user:
+            token = secrets.token_urlsafe(48)
+            db.add(EmailToken(user_id=user.id,
+                              token=token,
+                              expire_at=dt.datetime.utcnow() + dt.timedelta(hours=24)))
+            # 发邮件（后台异步）
+            verify_url = f"{settings.PUBLIC_WEB_URL}/verify?token={token}"
+            if bg:
+                bg.add_task(send_verification, to=user.email, verify_url=verify_url)
     return user
 
 @router.get("/verify")

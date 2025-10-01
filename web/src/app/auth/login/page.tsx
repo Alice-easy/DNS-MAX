@@ -1,9 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
+function LoginContent() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -90,5 +90,21 @@ export default function LoginPage() {
                 </form>
             </div>
         </main>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <main className="min-h-screen grid place-items-center p-6 bg-gray-50">
+                <div className="w-full max-w-sm">
+                    <div className="card space-y-4">
+                        <h1 className="text-2xl font-semibold text-center">加载中...</h1>
+                    </div>
+                </div>
+            </main>
+        }>
+            <LoginContent />
+        </Suspense>
     );
 }
