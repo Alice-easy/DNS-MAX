@@ -30,7 +30,8 @@ function LoginContent() {
                 const errorText = await r.text();
                 setError(errorText || "登录失败");
             }
-        } catch (err) {
+        } catch (error) {
+            console.error("Login request failed", error);
             setError("网络错误，请重试");
         } finally {
             setLoading(false);

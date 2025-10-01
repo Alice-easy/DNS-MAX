@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -9,18 +9,7 @@ function VerifyContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
-    useEffect(() => {
-        const token = searchParams.get("token");
-        if (!token) {
-            setStatus("error");
-            setMessage("缺少验证令牌");
-            return;
-        }
-
-        verifyEmail(token);
-    }, [searchParams]);
-
-    async function verifyEmail(token: string) {
+    const verifyEmail = useCallback(async (token: string) => {
         try {
             const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/verify?token=${token}`);
             if (r.ok) {
@@ -35,11 +24,23 @@ function VerifyContent() {
                 setStatus("error");
                 setMessage(errorText || "验证失败");
             }
-        } catch (err) {
+        } catch (error) {
+            console.error("Verify email failed", error);
             setStatus("error");
             setMessage("网络错误，请重试");
         }
-    }
+    }, [router]);
+
+    useEffect(() => {
+        const token = searchParams.get("token");
+        if (!token) {
+            setStatus("error");
+            setMessage("缺少验证令牌");
+            return;
+        }
+
+        void verifyEmail(token);
+    }, [searchParams, verifyEmail]);
 
     return (
         <main className="min-h-screen grid place-items-center p-6 bg-gray-50">

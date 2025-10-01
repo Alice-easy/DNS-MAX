@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
     const [email, setEmail] = useState("");
@@ -10,7 +9,6 @@ export default function RegisterPage() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
-    const router = useRouter();
 
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -41,7 +39,8 @@ export default function RegisterPage() {
                 const errorText = await r.text();
                 setError(errorText || "注册失败");
             }
-        } catch (err) {
+        } catch (error) {
+            console.error("Register request failed", error);
             setError("网络错误，请重试");
         } finally {
             setLoading(false);

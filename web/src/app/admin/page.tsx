@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -29,105 +29,120 @@ export default function AdminPage() {
     const [activeTab, setActiveTab] = useState("allocations");
     const router = useRouter();
 
-    useEffect(() => {
-        checkAdminAccess();
-        if (activeTab === "users") fetchUsers();
-        if (activeTab === "allocations") fetchPendingAllocations();
-    }, [activeTab]);
-
-    async function checkAdminAccess() {
+    const checkAdminAccess = useCallback(async (): Promise<boolean> => {
         try {
-            const r = await fetch("/api/session/me");
-            if (r.ok) {
-                const user = await r.json();
-                if (user.role !== "admin") {
-                    router.push("/dashboard");
-                    return;
-                }
-            } else {
+            const response = await fetch("/api/session/me", { cache: "no-store" });
+            if (!response.ok) {
                 router.push("/auth/login");
+                return false;
             }
-        } catch (err) {
+            const user = await response.json();
+            if (user.role !== "admin") {
+                router.push("/dashboard");
+                return false;
+            }
+            return true;
+        } catch (error) {
+            console.error("Check admin access failed", error);
             router.push("/auth/login");
-        } finally {
-            setLoading(false);
+            return false;
         }
-    }
+    }, [router]);
 
-    async function fetchUsers() {
+    const fetchUsers = useCallback(async () => {
         try {
-            const token = await getAccessToken();
-            const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/admin/users`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (r.ok) {
-                const data = await r.json();
-                setUsers(data);
+            const response = await fetch("/api/admin/users", { cache: "no-store" });
+            if (!response.ok) {
+                const text = await response.text();
+                console.error("Failed to fetch users:", text);
+                return;
             }
-        } catch (err) {
-            console.error("Failed to fetch users:", err);
+            const data: User[] = await response.json();
+            setUsers(data);
+        } catch (error) {
+            console.error("Failed to fetch users:", error);
         }
-    }
+    }, []);
 
-    async function fetchPendingAllocations() {
+    const fetchPendingAllocations = useCallback(async () => {
         try {
-            const token = await getAccessToken();
-            const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/admin/allocations?status=pending`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (r.ok) {
-                const data = await r.json();
-                setAllocations(data);
+            const response = await fetch("/api/admin/allocations?status=pending", { cache: "no-store" });
+            if (!response.ok) {
+                const text = await response.text();
+                console.error("Failed to fetch allocations:", text);
+                return;
             }
-        } catch (err) {
-            console.error("Failed to fetch allocations:", err);
+            const data: Allocation[] = await response.json();
+            setAllocations(data);
+        } catch (error) {
+            console.error("Failed to fetch allocations:", error);
         }
-    }
+    }, []);
 
-    async function getAccessToken() {
-        // 由于Cookie是httpOnly，需要通过API获取
-        const r = await fetch("/api/session/me");
-        if (!r.ok) throw new Error("Unauthorized");
-        return ""; // 实际需要从服务端获取token
-    }
-
-    async function approveAllocation(id: number) {
+    const approveAllocation = useCallback(async (id: number) => {
         try {
-            const token = await getAccessToken();
-            const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/admin/allocations/${id}/approve`, {
+            const response = await fetch(`/api/admin/allocations/${id}/approve`, {
                 method: "POST",
-                headers: { Authorization: `Bearer ${token}` }
             });
-            if (r.ok) {
-                fetchPendingAllocations(); // 刷新列表
-            } else {
-                alert("审批失败");
+            if (!response.ok) {
+                const text = await response.text();
+                alert(text || "审批失败");
+                return;
             }
-        } catch (err) {
+            await fetchPendingAllocations();
+        } catch (error) {
+            console.error("Approve allocation failed", error);
             alert("网络错误");
         }
-    }
+    }, [fetchPendingAllocations]);
 
-    async function updateUserRole(userId: number, newRole: string) {
+    const updateUserRole = useCallback(async (userId: number, newRole: string) => {
         try {
-            const token = await getAccessToken();
-            const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/admin/users/${userId}`, {
+            const response = await fetch(`/api/admin/users/${userId}`, {
                 method: "PATCH",
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json"
+                    "content-type": "application/json",
                 },
-                body: JSON.stringify({ role: newRole })
+                body: JSON.stringify({ role: newRole }),
             });
-            if (r.ok) {
-                fetchUsers(); // 刷新列表
-            } else {
-                alert("更新失败");
+            if (!response.ok) {
+                const text = await response.text();
+                alert(text || "更新失败");
+                return;
             }
-        } catch (err) {
+            await fetchUsers();
+        } catch (error) {
+            console.error("Update user role failed", error);
             alert("网络错误");
         }
-    }
+    }, [fetchUsers]);
+
+    useEffect(() => {
+        let cancelled = false;
+        const bootstrap = async () => {
+            setLoading(true);
+            const isAdmin = await checkAdminAccess();
+            if (!isAdmin || cancelled) {
+                setLoading(false);
+                return;
+            }
+
+            if (activeTab === "users") {
+                await fetchUsers();
+            } else {
+                await fetchPendingAllocations();
+            }
+
+            if (!cancelled) {
+                setLoading(false);
+            }
+        };
+
+        void bootstrap();
+        return () => {
+            cancelled = true;
+        };
+    }, [activeTab, checkAdminAccess, fetchPendingAllocations, fetchUsers]);
 
     if (loading) {
         return <div className="min-h-screen flex items-center justify-center">加载中...</div>;
@@ -144,7 +159,7 @@ export default function AdminPage() {
                         </Link>
                         <button
                             onClick={() => {
-                                fetch("/api/session/logout", { method: "POST" });
+                                void fetch("/api/session/logout", { method: "POST" });
                                 router.push("/");
                             }}
                             className="text-red-600 hover:underline"
@@ -203,7 +218,9 @@ export default function AdminPage() {
                                                 <td className="p-2">{new Date(alloc.created_at).toLocaleDateString()}</td>
                                                 <td className="p-2">
                                                     <button
-                                                        onClick={() => approveAllocation(alloc.id)}
+                                                        onClick={() => {
+                                                            void approveAllocation(alloc.id);
+                                                        }}
                                                         className="btn text-xs"
                                                     >
                                                         批准
@@ -244,7 +261,9 @@ export default function AdminPage() {
                                                 <td className="p-2">
                                                     <select
                                                         value={user.role}
-                                                        onChange={e => updateUserRole(user.id, e.target.value)}
+                                                        onChange={e => {
+                                                            void updateUserRole(user.id, e.target.value);
+                                                        }}
                                                         className="text-xs border rounded px-2 py-1"
                                                     >
                                                         <option value="user">普通用户</option>

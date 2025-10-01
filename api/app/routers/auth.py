@@ -1,7 +1,9 @@
 import datetime as dt
+import logging
 import secrets
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Response, Request, Body
 from sqlalchemy import select, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..models import User, EmailToken, Role
@@ -13,6 +15,20 @@ from ..config import get_settings
 
 router = APIRouter()
 settings = get_settings()
+logger = logging.getLogger(__name__)
+
+
+def _cookie_params():
+    params = dict(
+        httponly=True,
+        secure=settings.COOKIE_SECURE,
+        samesite="lax",
+        path="/",
+    )
+    domain = (settings.COOKIE_DOMAIN or "").strip()
+    if domain and domain.lower() != "localhost":
+        params["domain"] = domain
+    return params
 
 @router.post("/register", response_model=UserOut)
 async def register(payload: RegisterIn, db: Session = Depends(get_db), bg: BackgroundTasks = None):
@@ -30,7 +46,11 @@ async def register(payload: RegisterIn, db: Session = Depends(get_db), bg: Backg
             user.email_verified_at = dt.datetime.utcnow()
             
         db.add(user)
-        db.flush()  # get user.id
+        try:
+            db.flush()  # get user.id
+        except IntegrityError:
+            logger.info("Attempted to register duplicate email: %s", payload.email)
+            raise HTTPException(409, "Email already registered")
 
         # 只有非首位用户需要邮件验证
         if not is_first_user:
@@ -56,25 +76,51 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     return {"ok": True}
 
 @router.post("/login", response_model=TokenPair)
-def login(payload: LoginIn, db: Session = Depends(get_db)):
+def login(payload: LoginIn, response: Response, db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(User.email==payload.email.lower()))
     if not user or not pwd_hasher.verify(user.password_hash, payload.password):
         raise HTTPException(401, "Invalid credentials")
     if not user.email_verified_at:
         raise HTTPException(403, "Email not verified")
     access, refresh = create_tokens(user)   # jose + HS256，带 role / sub
+
+    cookie_kwargs = _cookie_params()
+    access_max_age = max(1, settings.ACCESS_TOKEN_TTL_MIN * 60)
+    refresh_max_age = max(1, settings.REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60)
+
+    response.set_cookie("access_token", access, max_age=access_max_age, **cookie_kwargs)
+    response.set_cookie("refresh_token", refresh, max_age=refresh_max_age, **cookie_kwargs)
+    logger.info("Set login cookies for user %s", user.email)
+
     return {"access_token": access, "refresh_token": refresh}
 
 @router.post("/refresh", response_model=TokenPair)
-def refresh_token(payload: dict, db: Session = Depends(get_db)):
-    refresh_token = payload.get("refresh_token")
-    if not refresh_token:
+def refresh_token(
+    request: Request,
+    response: Response,
+    payload: dict | None = Body(None),
+    db: Session = Depends(get_db),
+):
+    refresh_token_value = (payload or {}).get("refresh_token") if payload else None
+    if not refresh_token_value:
+        refresh_token_value = request.cookies.get("refresh_token")
+
+    if not refresh_token_value:
         raise HTTPException(400, "Refresh token required")
-    
-    token_data = verify_token(refresh_token, settings.JWT_REFRESH_SECRET)
+
+    token_data = verify_token(refresh_token_value, settings.JWT_REFRESH_SECRET)
     user = db.get(User, token_data.sub)
     if not user:
         raise HTTPException(401, "User not found")
-    
+
     access, refresh = create_tokens(user)
+
+    cookie_kwargs = _cookie_params()
+    access_max_age = max(1, settings.ACCESS_TOKEN_TTL_MIN * 60)
+    refresh_max_age = max(1, settings.REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60)
+
+    response.set_cookie("access_token", access, max_age=access_max_age, **cookie_kwargs)
+    response.set_cookie("refresh_token", refresh, max_age=refresh_max_age, **cookie_kwargs)
+    logger.info("Rotated refresh token for user_id=%s", user.id)
+
     return {"access_token": access, "refresh_token": refresh}

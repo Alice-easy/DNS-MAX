@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -30,59 +30,99 @@ export default function DashboardPage() {
         subdomain: "",
         type: "A",
         value: "",
-        ttl: 600
+        ttl: 600,
     });
+    const [formError, setFormError] = useState<string | null>(null);
+    const [formSubmitting, setFormSubmitting] = useState(false);
     const router = useRouter();
 
-    useEffect(() => {
-        fetchUserData();
-        fetchAllocations();
-    }, []);
-
-    async function fetchUserData() {
+    const fetchUserData = useCallback(async (): Promise<User | null> => {
         try {
-            const r = await fetch("/api/session/me");
-            if (r.ok) {
-                const userData = await r.json();
-                setUser(userData);
-            } else {
+            const response = await fetch("/api/session/me", { cache: "no-store" });
+            if (!response.ok) {
                 router.push("/auth/login");
+                return null;
             }
-        } catch (err) {
+            const userData: User = await response.json();
+            setUser(userData);
+            return userData;
+        } catch (error) {
+            console.error("Failed to fetch user:", error);
             router.push("/auth/login");
-        } finally {
-            setLoading(false);
+            return null;
         }
-    }
+    }, [router]);
 
-    async function fetchAllocations() {
+    const fetchAllocations = useCallback(async () => {
         try {
-            const token = getCookie("access_token");
-            if (!token) return;
+            const response = await fetch("/api/allocations/mine", { cache: "no-store" });
+            if (response.status === 401) {
+                router.push("/auth/login");
+                return;
+            }
+            if (!response.ok) {
+                const text = await response.text();
+                console.error("Failed to fetch allocations:", text);
+                return;
+            }
+            const data: Allocation[] = await response.json();
+            setAllocations(data);
+        } catch (error) {
+            console.error("Failed to fetch allocations:", error);
+        }
+    }, [router]);
 
-            const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/allocations/mine`, {
-                headers: { Authorization: `Bearer ${token}` }
+    useEffect(() => {
+        let cancelled = false;
+        const bootstrap = async () => {
+            setLoading(true);
+            const currentUser = await fetchUserData();
+            if (!currentUser || cancelled) {
+                setLoading(false);
+                return;
+            }
+
+            await fetchAllocations();
+
+            if (!cancelled) {
+                setLoading(false);
+            }
+        };
+
+        void bootstrap();
+        return () => {
+            cancelled = true;
+        };
+    }, [fetchAllocations, fetchUserData]);
+
+    const handleSubmit = useCallback(async (e: React.FormEvent) => {
+        e.preventDefault();
+        setFormError(null);
+        setFormSubmitting(true);
+
+        try {
+            const response = await fetch("/api/allocations", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify(formData),
             });
 
-            if (r.ok) {
-                const data = await r.json();
-                setAllocations(data);
+            if (!response.ok) {
+                const text = await response.text();
+                setFormError(text || "提交失败");
+                return;
             }
-        } catch (err) {
-            console.error("Failed to fetch allocations:", err);
+
+            setShowForm(false);
+            setFormData({ subdomain: "", type: "A", value: "", ttl: 600 });
+            await fetchAllocations();
+        } catch (error) {
+            console.error("Submit allocation failed", error);
+            setFormError("网络错误，请重试");
+        } finally {
+            setFormSubmitting(false);
         }
-    }
-
-    function getCookie(name: string) {
-        // 这里需要从服务端获取，因为Cookie是httpOnly
-        return null;
-    }
-
-    async function handleSubmit(e: React.FormEvent) {
-        e.preventDefault();
-        // 实现提交逻辑
-        console.log("Submit allocation:", formData);
-    }
+    }, [fetchAllocations, formData]);
 
     async function logout() {
         await fetch("/api/session/logout", { method: "POST" });
@@ -183,8 +223,10 @@ export default function DashboardPage() {
                                 />
                             </div>
 
-                            <button type="submit" className="btn w-full">
-                                提交申请
+                            {formError && <p className="text-sm text-red-600">{formError}</p>}
+
+                            <button type="submit" className="btn w-full" disabled={formSubmitting}>
+                                {formSubmitting ? "提交中..." : "提交申请"}
                             </button>
                         </form>
                     </div>

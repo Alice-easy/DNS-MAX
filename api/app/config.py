@@ -35,6 +35,7 @@ class Settings:
     
     # CORS/Cookies
     COOKIE_DOMAIN: str = os.getenv("COOKIE_DOMAIN", ".yourdomain.com")
+    COOKIE_SECURE: bool = os.getenv("COOKIE_SECURE", "false").lower() == "true"
 
 @lru_cache()
 def get_settings():
