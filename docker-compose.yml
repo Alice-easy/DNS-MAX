@@ -1,116 +1,49 @@
-# DNS-Max Docker Compose - 生产环境配置
-# 使用 GitHub Container Registry 中的预构建镜像进行生产部署
-#
-# 使用方法：
-# 1. 配置 .env 文件
-# 2. 确保 BACKEND_IMAGE 和 FRONTEND_IMAGE 环境变量已设置
-# 3. 运行: docker-compose up -d
-
-version: "3.8"
-
+version: "3.9"
 services:
-  # PostgreSQL 数据库
-  postgres:
-    image: postgres:15-alpine
-    container_name: dns-max-postgres
-    restart: unless-stopped
+  db:
+    image: postgres:16
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-dns_max}
-      POSTGRES_USER: ${POSTGRES_USER:-dns_max_user}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    ports:
-      - "5432:5432"
+      - dbdata:/var/lib/postgresql/data
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-dns_max_user} -d ${POSTGRES_DB:-dns_max}",
-        ]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
       retries: 5
-    networks:
-      - dns-max-network
 
-  # Redis 缓存
-  redis:
-    image: redis:7-alpine
-    container_name: dns-max-redis
-    restart: unless-stopped
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    networks:
-      - dns-max-network
-
-  # 后端 API 服务（预构建镜像）
-  backend:
-    image: ${BACKEND_IMAGE:-ghcr.io/your-username/dns-max-backend:latest}
-    container_name: dns-max-backend
-    restart: unless-stopped
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
-      - SECRET_KEY=${SECRET_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - NODE_ENV=${NODE_ENV:-production}
+  api:
+    build: ./api
+    env_file: .env
     ports:
       - "8000:8000"
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
+      db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-    networks:
-      - dns-max-network
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
 
-  # 前端 Web 服务（预构建镜像）
-  frontend:
-    image: ${FRONTEND_IMAGE:-ghcr.io/your-username/dns-max-frontend:latest}
-    container_name: dns-max-frontend
-    restart: unless-stopped
+  web:
+    build: ./web
     environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
-      - NODE_ENV=${NODE_ENV:-production}
+      - PUBLIC_API_URL=http://api:8000
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - PUBLIC_WEB_URL=http://localhost:3000
+      - COOKIE_SECURE=false
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - ACCESS_TOKEN_TTL_MIN=${ACCESS_TOKEN_TTL_MIN}
+      - REFRESH_TOKEN_TTL_DAYS=${REFRESH_TOKEN_TTL_DAYS}
     ports:
       - "3000:3000"
-    depends_on:
-      backend:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-    networks:
-      - dns-max-network
 
-# 网络配置
-networks:
-  dns-max-network:
-    driver: bridge
-    name: dns-max-network
-
-# 数据卷配置
 volumes:
-  postgres_data:
-    name: dns-max-postgres-data
-  redis_data:
-    name: dns-max-redis-data
+  dbdata:
