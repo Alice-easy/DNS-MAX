@@ -38,7 +38,7 @@ def create_tokens(user: User) -> tuple[str, str]:
     now = datetime.utcnow()
     
     access_payload = {
-        "sub": user.id,
+        "sub": str(user.id),
         "role": user.role.value,
         "exp": now + timedelta(minutes=settings.ACCESS_TOKEN_TTL_MIN),
         "iat": now,
@@ -46,7 +46,7 @@ def create_tokens(user: User) -> tuple[str, str]:
     }
     
     refresh_payload = {
-        "sub": user.id,
+        "sub": str(user.id),
         "role": user.role.value,
         "exp": now + timedelta(days=settings.REFRESH_TOKEN_TTL_DAYS),
         "iat": now,
@@ -63,11 +63,15 @@ def verify_token(token: str, secret: str) -> TokenData:
     try:
         payload = jwt.decode(token, secret, algorithms=["HS256"])
         return TokenData(
-            sub=payload["sub"],
+            sub=int(payload["sub"]),
             role=payload["role"],
             exp=payload["exp"]
         )
-    except jwt.PyJWTError:
+    except jwt.PyJWTError as e:
+        logger.error(f"JWT decode error: {type(e).__name__}: {str(e)}, token length: {len(token)}, token[:20]: {token[:20]}")
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except (ValueError, KeyError) as e:
+        logger.error(f"Token payload parse error: {type(e).__name__}: {str(e)}")
         raise HTTPException(status_code=401, detail="Invalid token")
 
 def require_user(

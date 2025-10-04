@@ -30,11 +30,18 @@ services:
 
   web:
     build: ./web
-    env_file: .env
     environment:
       - PUBLIC_API_URL=http://api:8000
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
       - PUBLIC_WEB_URL=http://localhost:3000
-      - COOKIE_DOMAIN=localhost
+      - COOKIE_SECURE=false
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - ACCESS_TOKEN_TTL_MIN=${ACCESS_TOKEN_TTL_MIN}
+      - REFRESH_TOKEN_TTL_DAYS=${REFRESH_TOKEN_TTL_DAYS}
     ports:
       - "3000:3000"
 
