@@ -13,6 +13,7 @@ interface User {
 
 interface Allocation {
     id: number;
+    domain_id: number;
     subdomain: string;
     type: string;
     value: string;
@@ -21,12 +22,20 @@ interface Allocation {
     created_at: string;
 }
 
+interface Domain {
+    id: number;
+    name: string;
+    provider: string;
+}
+
 export default function DashboardPage() {
     const [user, setUser] = useState<User | null>(null);
     const [allocations, setAllocations] = useState<Allocation[]>([]);
+    const [domains, setDomains] = useState<Domain[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState({
+        domain_id: 0,
         subdomain: "",
         type: "A",
         value: "",
@@ -72,6 +81,25 @@ export default function DashboardPage() {
         }
     }, [router]);
 
+    const fetchDomains = useCallback(async () => {
+        try {
+            const response = await fetch("/api/domains", { cache: "no-store" });
+            if (!response.ok) {
+                const text = await response.text();
+                console.error("Failed to fetch domains:", text);
+                return;
+            }
+            const data: Domain[] = await response.json();
+            setDomains(data);
+            // 设置默认选中第一个域名
+            if (data.length > 0 && formData.domain_id === 0) {
+                setFormData(prev => ({ ...prev, domain_id: data[0].id }));
+            }
+        } catch (error) {
+            console.error("Failed to fetch domains:", error);
+        }
+    }, [formData.domain_id]);
+
     useEffect(() => {
         let cancelled = false;
         const bootstrap = async () => {
@@ -82,7 +110,7 @@ export default function DashboardPage() {
                 return;
             }
 
-            await fetchAllocations();
+            await Promise.all([fetchAllocations(), fetchDomains()]);
 
             if (!cancelled) {
                 setLoading(false);
@@ -93,7 +121,7 @@ export default function DashboardPage() {
         return () => {
             cancelled = true;
         };
-    }, [fetchAllocations, fetchUserData]);
+    }, [fetchAllocations, fetchUserData, fetchDomains]);
 
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
@@ -114,7 +142,7 @@ export default function DashboardPage() {
             }
 
             setShowForm(false);
-            setFormData({ subdomain: "", type: "A", value: "", ttl: 600 });
+            setFormData({ domain_id: domains[0]?.id || 0, subdomain: "", type: "A", value: "", ttl: 600 });
             await fetchAllocations();
         } catch (error) {
             console.error("Submit allocation failed", error);
@@ -166,69 +194,98 @@ export default function DashboardPage() {
                 {showForm && (
                     <div className="card mb-6">
                         <h3 className="text-lg font-semibold mb-4">申请域名分发</h3>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    子域名
-                                </label>
-                                <input
-                                    className="input"
-                                    placeholder="例如：alice"
-                                    value={formData.subdomain}
-                                    onChange={e => setFormData({ ...formData, subdomain: e.target.value })}
-                                    required
-                                />
-                            </div>
+                        {domains.length === 0 ? (
+                            <p className="text-gray-500 text-center py-8">
+                                暂无可用域名，请联系管理员配置域名
+                            </p>
+                        ) : (
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        选择域名
+                                    </label>
+                                    <select
+                                        className="input"
+                                        value={formData.domain_id}
+                                        onChange={e => setFormData({ ...formData, domain_id: parseInt(e.target.value) })}
+                                        required
+                                    >
+                                        {domains.map(domain => (
+                                            <option key={domain.id} value={domain.id}>
+                                                {domain.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    记录类型
-                                </label>
-                                <select
-                                    className="input"
-                                    value={formData.type}
-                                    onChange={e => setFormData({ ...formData, type: e.target.value })}
-                                >
-                                    <option value="A">A记录</option>
-                                    <option value="CNAME">CNAME记录</option>
-                                    <option value="TXT">TXT记录</option>
-                                </select>
-                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        子域名
+                                    </label>
+                                    <div className="flex items-center">
+                                        <input
+                                            className="input flex-1"
+                                            placeholder="例如：alice"
+                                            value={formData.subdomain}
+                                            onChange={e => setFormData({ ...formData, subdomain: e.target.value })}
+                                            required
+                                        />
+                                        <span className="ml-2 text-gray-600">
+                                            .{domains.find(d => d.id === formData.domain_id)?.name}
+                                        </span>
+                                    </div>
+                                </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    指向值
-                                </label>
-                                <input
-                                    className="input"
-                                    placeholder="IP地址或域名"
-                                    value={formData.value}
-                                    onChange={e => setFormData({ ...formData, value: e.target.value })}
-                                    required
-                                />
-                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        记录类型
+                                    </label>
+                                    <select
+                                        className="input"
+                                        value={formData.type}
+                                        onChange={e => setFormData({ ...formData, type: e.target.value })}
+                                    >
+                                        <option value="A">A记录</option>
+                                        <option value="CNAME">CNAME记录</option>
+                                        <option value="TXT">TXT记录</option>
+                                    </select>
+                                </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    TTL（秒）
-                                </label>
-                                <input
-                                    className="input"
-                                    type="number"
-                                    min="60"
-                                    max="86400"
-                                    value={formData.ttl}
-                                    onChange={e => setFormData({ ...formData, ttl: parseInt(e.target.value) })}
-                                    required
-                                />
-                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        指向值
+                                    </label>
+                                    <input
+                                        className="input"
+                                        placeholder="IP地址或域名"
+                                        value={formData.value}
+                                        onChange={e => setFormData({ ...formData, value: e.target.value })}
+                                        required
+                                    />
+                                </div>
 
-                            {formError && <p className="text-sm text-red-600">{formError}</p>}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        TTL（秒）
+                                    </label>
+                                    <input
+                                        className="input"
+                                        type="number"
+                                        min="60"
+                                        max="86400"
+                                        value={formData.ttl}
+                                        onChange={e => setFormData({ ...formData, ttl: parseInt(e.target.value) })}
+                                        required
+                                    />
+                                </div>
 
-                            <button type="submit" className="btn w-full" disabled={formSubmitting}>
-                                {formSubmitting ? "提交中..." : "提交申请"}
-                            </button>
-                        </form>
+                                {formError && <p className="text-sm text-red-600">{formError}</p>}
+
+                                <button type="submit" className="btn w-full" disabled={formSubmitting}>
+                                    {formSubmitting ? "提交中..." : "提交申请"}
+                                </button>
+                            </form>
+                        )}
                     </div>
                 )}
 

@@ -56,7 +56,7 @@ class AllocationBase(BaseModel):
     ttl: int = Field(default=600, ge=60, le=86400)
 
 class AllocationIn(AllocationBase):
-    pass
+    domain_id: int = Field(description="Domain ID to allocate subdomain under")
 
 class AllocationOut(AllocationBase):
     id: int

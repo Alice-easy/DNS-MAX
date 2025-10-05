@@ -30,7 +30,7 @@ app.add_middleware(
 # 路由
 app.include_router(auth.router, prefix="/auth", tags=["认证"])
 app.include_router(users.router, prefix="/users", tags=["用户"])
-app.include_router(domains.router, prefix="/allocations", tags=["域名分发"])
+app.include_router(domains.router, prefix="/domains", tags=["域名分发"])
 app.include_router(admin.router, prefix="/admin", tags=["管理员"])
 
 @app.get("/", response_model=HealthCheck)

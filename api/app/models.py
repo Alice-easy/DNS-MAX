@@ -50,3 +50,9 @@ class Allocation(Base):
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)
 
     __table_args__ = (UniqueConstraint("domain_id","subdomain","type", name="uq_record"),)
+
+class SystemConfig(Base):
+    __tablename__ = "system_config"
+    key: Mapped[str] = mapped_column(String(128), primary_key=True)
+    value: Mapped[str] = mapped_column(Text, nullable=True)
+    updated_at: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow, onupdate=dt.datetime.utcnow)

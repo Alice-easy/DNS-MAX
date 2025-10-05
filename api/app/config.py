@@ -1,5 +1,6 @@
 import os
 from functools import lru_cache
+from typing import Optional
 
 class Settings:
     # Database
@@ -18,21 +19,6 @@ class Settings:
     PUBLIC_WEB_URL: str = os.getenv("PUBLIC_WEB_URL", "https://yourdomain.com")
     PUBLIC_API_URL: str = os.getenv("PUBLIC_API_URL", "https://api.yourdomain.com")
     
-    # Mail
-    MAIL_PROVIDER: str = os.getenv("MAIL_PROVIDER", "SMTP")
-    RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
-    EMAIL_FROM: str = os.getenv("EMAIL_FROM", "DomainApp <no-reply@yourdomain.com>")
-    SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.sendgrid.net")
-    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
-    SMTP_USER: str = os.getenv("SMTP_USER", "")
-    SMTP_PASS: str = os.getenv("SMTP_PASS", "")
-    
-    # DNSPod
-    DNSPOD_SECRET_ID: str = os.getenv("DNSPOD_SECRET_ID", "")
-    DNSPOD_SECRET_KEY: str = os.getenv("DNSPOD_SECRET_KEY", "")
-    DNS_ROOT_DOMAIN: str = os.getenv("DNS_ROOT_DOMAIN", "example.com")
-    DNS_DEFAULT_TTL: int = int(os.getenv("DNS_DEFAULT_TTL", "600"))
-    
     # CORS/Cookies
     COOKIE_DOMAIN: str = os.getenv("COOKIE_DOMAIN", ".yourdomain.com")
     COOKIE_SECURE: bool = os.getenv("COOKIE_SECURE", "false").lower() == "true"
@@ -40,3 +26,29 @@ class Settings:
 @lru_cache()
 def get_settings():
     return Settings()
+
+def get_config_value(db, key: str, default: str = "") -> str:
+    """从数据库获取配置，如果不存在则返回环境变量或默认值"""
+    from .models import SystemConfig
+    from sqlalchemy import select
+    
+    # 首先尝试从数据库读取
+    config = db.scalar(select(SystemConfig).where(SystemConfig.key == key))
+    if config and config.value:
+        return config.value
+    
+    # 回退到环境变量
+    return os.getenv(key, default)
+
+def set_config_value(db, key: str, value: Optional[str]):
+    """设置系统配置到数据库"""
+    from .models import SystemConfig
+    from sqlalchemy import select
+    
+    config = db.scalar(select(SystemConfig).where(SystemConfig.key == key))
+    if config:
+        config.value = value
+    else:
+        config = SystemConfig(key=key, value=value)
+        db.add(config)
+    db.commit()

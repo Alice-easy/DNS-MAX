@@ -22,9 +22,30 @@ interface Allocation {
     created_at: string;
 }
 
+interface SystemConfig {
+    MAIL_PROVIDER: string;
+    RESEND_API_KEY: string;
+    EMAIL_FROM: string;
+    SMTP_HOST: string;
+    SMTP_PORT: string;
+    SMTP_USER: string;
+    SMTP_PASS: string;
+    DNSPOD_SECRET_ID: string;
+    DNSPOD_SECRET_KEY: string;
+    DNS_DEFAULT_TTL: string;
+}
+
+interface Domain {
+    id: number;
+    name: string;
+    provider: string;
+}
+
 export default function AdminPage() {
     const [users, setUsers] = useState<User[]>([]);
     const [allocations, setAllocations] = useState<Allocation[]>([]);
+    const [domains, setDomains] = useState<Domain[]>([]);
+    const [config, setConfig] = useState<SystemConfig | null>(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("allocations");
     const router = useRouter();
@@ -79,6 +100,77 @@ export default function AdminPage() {
         }
     }, []);
 
+    const fetchConfig = useCallback(async () => {
+        try {
+            const response = await fetch("/api/admin/config", { cache: "no-store" });
+            if (!response.ok) {
+                const text = await response.text();
+                console.error("Failed to fetch config:", text);
+                return;
+            }
+            const data: SystemConfig = await response.json();
+            setConfig(data);
+        } catch (error) {
+            console.error("Failed to fetch config:", error);
+        }
+    }, []);
+
+    const fetchDomains = useCallback(async () => {
+        try {
+            const response = await fetch("/api/admin/domains", { cache: "no-store" });
+            if (!response.ok) {
+                const text = await response.text();
+                console.error("Failed to fetch domains:", text);
+                return;
+            }
+            const data: Domain[] = await response.json();
+            setDomains(data);
+        } catch (error) {
+            console.error("Failed to fetch domains:", error);
+        }
+    }, []);
+
+    const syncDomains = useCallback(async () => {
+        try {
+            const response = await fetch("/api/admin/domains/sync", {
+                method: "POST",
+            });
+            if (!response.ok) {
+                const text = await response.text();
+                alert(text || "同步失败");
+                return;
+            }
+            const result = await response.json();
+            alert(`同步成功！共 ${result.total} 个域名，新增 ${result.synced} 个`);
+            await fetchDomains();
+        } catch (error) {
+            console.error("Sync domains failed", error);
+            alert("网络错误");
+        }
+    }, [fetchDomains]);
+
+    const updateConfig = useCallback(async (updates: Partial<SystemConfig>) => {
+        try {
+            const response = await fetch("/api/admin/config", {
+                method: "PATCH",
+                headers: {
+                    "content-type": "application/json",
+                },
+                body: JSON.stringify(updates),
+            });
+            if (!response.ok) {
+                const text = await response.text();
+                alert(text || "配置更新失败");
+                return;
+            }
+            await fetchConfig();
+            alert("配置已更新");
+        } catch (error) {
+            console.error("Update config failed", error);
+            alert("网络错误");
+        }
+    }, [fetchConfig]);
+
     const approveAllocation = useCallback(async (id: number) => {
         try {
             const response = await fetch(`/api/admin/allocations/${id}/approve`, {
@@ -129,6 +221,10 @@ export default function AdminPage() {
 
             if (activeTab === "users") {
                 await fetchUsers();
+            } else if (activeTab === "config") {
+                await fetchConfig();
+            } else if (activeTab === "domains") {
+                await fetchDomains();
             } else {
                 await fetchPendingAllocations();
             }
@@ -142,7 +238,7 @@ export default function AdminPage() {
         return () => {
             cancelled = true;
         };
-    }, [activeTab, checkAdminAccess, fetchPendingAllocations, fetchUsers]);
+    }, [activeTab, checkAdminAccess, fetchPendingAllocations, fetchUsers, fetchConfig, fetchDomains]);
 
     if (loading) {
         return <div className="min-h-screen flex items-center justify-center">加载中...</div>;
@@ -180,11 +276,25 @@ export default function AdminPage() {
                         分发申请
                     </button>
                     <button
+                        onClick={() => setActiveTab("domains")}
+                        className={`px-4 py-2 rounded ${activeTab === "domains" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
+                            }`}
+                    >
+                        域名管理
+                    </button>
+                    <button
                         onClick={() => setActiveTab("users")}
                         className={`px-4 py-2 rounded ${activeTab === "users" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
                             }`}
                     >
                         用户管理
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("config")}
+                        className={`px-4 py-2 rounded ${activeTab === "config" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
+                            }`}
+                    >
+                        系统配置
                     </button>
                 </div>
 
@@ -226,6 +336,51 @@ export default function AdminPage() {
                                                         批准
                                                     </button>
                                                 </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === "domains" && (
+                    <div className="card">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-semibold">域名管理</h3>
+                            <button
+                                onClick={() => {
+                                    void syncDomains();
+                                }}
+                                className="btn"
+                            >
+                                从 DNSPod 同步域名
+                            </button>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-4">
+                            点击「同步域名」按钮从 DNSPod 账号自动获取所有托管域名
+                        </p>
+                        {domains.length === 0 ? (
+                            <p className="text-gray-500 text-center py-8">
+                                暂无域名，请先配置 DNSPod 凭证后点击「同步域名」按钮
+                            </p>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="border-b">
+                                            <th className="text-left p-2">ID</th>
+                                            <th className="text-left p-2">域名</th>
+                                            <th className="text-left p-2">提供商</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {domains.map(domain => (
+                                            <tr key={domain.id} className="border-b">
+                                                <td className="p-2">{domain.id}</td>
+                                                <td className="p-2 font-mono">{domain.name}</td>
+                                                <td className="p-2">{domain.provider}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -293,6 +448,146 @@ export default function AdminPage() {
                                     </tbody>
                                 </table>
                             </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === "config" && (
+                    <div className="card">
+                        <h3 className="text-lg font-semibold mb-4">系统配置</h3>
+                        {!config ? (
+                            <p className="text-gray-500 text-center py-8">加载中...</p>
+                        ) : (
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const formData = new FormData(e.currentTarget);
+                                    const updates: Record<string, string> = {};
+                                    formData.forEach((value, key) => {
+                                        updates[key] = value.toString();
+                                    });
+                                    void updateConfig(updates);
+                                }}
+                                className="space-y-6"
+                            >
+                                <div className="border-b pb-4">
+                                    <h4 className="font-semibold mb-3">邮件配置</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">邮件提供商</label>
+                                            <select
+                                                name="MAIL_PROVIDER"
+                                                defaultValue={config.MAIL_PROVIDER}
+                                                className="w-full border rounded px-3 py-2"
+                                            >
+                                                <option value="SMTP">SMTP</option>
+                                                <option value="RESEND">Resend</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">发件人</label>
+                                            <input
+                                                name="EMAIL_FROM"
+                                                type="text"
+                                                defaultValue={config.EMAIL_FROM}
+                                                className="w-full border rounded px-3 py-2"
+                                                placeholder="DomainApp <no-reply@yourdomain.com>"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">Resend API Key</label>
+                                            <input
+                                                name="RESEND_API_KEY"
+                                                type="password"
+                                                defaultValue={config.RESEND_API_KEY}
+                                                className="w-full border rounded px-3 py-2"
+                                                placeholder="留空则使用 SMTP"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">SMTP 主机</label>
+                                            <input
+                                                name="SMTP_HOST"
+                                                type="text"
+                                                defaultValue={config.SMTP_HOST}
+                                                className="w-full border rounded px-3 py-2"
+                                                placeholder="smtp.sendgrid.net"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">SMTP 端口</label>
+                                            <input
+                                                name="SMTP_PORT"
+                                                type="text"
+                                                defaultValue={config.SMTP_PORT}
+                                                className="w-full border rounded px-3 py-2"
+                                                placeholder="587"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">SMTP 用户名</label>
+                                            <input
+                                                name="SMTP_USER"
+                                                type="text"
+                                                defaultValue={config.SMTP_USER}
+                                                className="w-full border rounded px-3 py-2"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">SMTP 密码</label>
+                                            <input
+                                                name="SMTP_PASS"
+                                                type="password"
+                                                defaultValue={config.SMTP_PASS}
+                                                className="w-full border rounded px-3 py-2"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="border-b pb-4">
+                                    <h4 className="font-semibold mb-3">DNSPod 配置</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">Secret ID</label>
+                                            <input
+                                                name="DNSPOD_SECRET_ID"
+                                                type="text"
+                                                defaultValue={config.DNSPOD_SECRET_ID}
+                                                className="w-full border rounded px-3 py-2"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">Secret Key</label>
+                                            <input
+                                                name="DNSPOD_SECRET_KEY"
+                                                type="password"
+                                                defaultValue={config.DNSPOD_SECRET_KEY}
+                                                className="w-full border rounded px-3 py-2"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">默认 TTL (秒)</label>
+                                            <input
+                                                name="DNS_DEFAULT_TTL"
+                                                type="text"
+                                                defaultValue={config.DNS_DEFAULT_TTL}
+                                                className="w-full border rounded px-3 py-2"
+                                                placeholder="600"
+                                            />
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-gray-600 mt-2">
+                                        配置 DNSPod 凭证后，在「域名管理」标签页点击「同步域名」按钮自动获取所有托管域名
+                                    </p>
+                                </div>
+
+                                <div className="flex justify-end">
+                                    <button type="submit" className="btn">
+                                        保存配置
+                                    </button>
+                                </div>
+                            </form>
                         )}
                     </div>
                 )}

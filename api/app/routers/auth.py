@@ -61,7 +61,7 @@ async def register(payload: RegisterIn, db: Session = Depends(get_db), bg: Backg
             # 发邮件（后台异步）
             verify_url = f"{settings.PUBLIC_WEB_URL}/verify?token={token}"
             if bg:
-                bg.add_task(send_verification, to=user.email, verify_url=verify_url)
+                bg.add_task(send_verification, db=db, to=user.email, verify_url=verify_url)
     return user
 
 @router.get("/verify")

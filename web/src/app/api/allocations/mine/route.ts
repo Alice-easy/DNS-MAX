@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
     let targetUrl: string;
     try {
-        targetUrl = resolveApiUrl("/allocations/mine");
+        targetUrl = resolveApiUrl("/domains/allocations/mine");
     } catch (error) {
         return invalidApiUrlResponse(error);
     }

@@ -8,6 +8,7 @@ import {
 } from "../_helpers";
 
 interface AllocationRequestPayload {
+    domain_id: number;
     subdomain: string;
     type: string;
     value: string;
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
 
     let targetUrl: string;
     try {
-        targetUrl = resolveApiUrl("/allocations");
+        targetUrl = resolveApiUrl("/domains/allocations");
     } catch (error) {
         return invalidApiUrlResponse(error);
     }
