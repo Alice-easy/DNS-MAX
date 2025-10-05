@@ -117,32 +117,46 @@ export function Sidebar({ role }: SidebarProps) {
 
       {/* 侧边栏 */}
       <aside
-        className={`fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-white border-r border-gray-200 transition-transform duration-300 ${
+        className={`fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 border-r border-gray-700 transition-transform duration-300 shadow-2xl ${
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <Link href="/" className="flex items-center space-x-2">
-              <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-              </svg>
-              <span className="font-bold text-lg">DNS-Max</span>
+          <div className="flex items-center justify-between p-6 border-b border-gray-700">
+            <Link href="/" className="flex items-center space-x-3 group">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                </svg>
+              </div>
+              <span className="font-bold text-xl text-white group-hover:text-blue-400 transition-colors">DNS-Max</span>
             </Link>
             <button
               onClick={() => setIsOpen(false)}
-              className="lg:hidden text-gray-500 hover:text-gray-700"
+              className="lg:hidden text-gray-400 hover:text-white transition-colors"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
 
+          {/* 用户角色标签 */}
+          {role === "admin" && (
+            <div className="px-6 py-3">
+              <div className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 shadow-lg">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.788l1.599.799L11 4.323V3a1 1 0 011-1zm-5 8.274l-.818 2.552c-.25.78.24 1.616 1.068 1.801.745.166 1.5.34 2.25.51A1 1 0 019 15h2a1 1 0 01.5-.134c.75-.171 1.505-.345 2.25-.511.828-.185 1.318-1.021 1.068-1.8l-.818-2.553a3.999 3.999 0 01-2.67.98A4 4 0 015 10.274z" clipRule="evenodd" />
+                </svg>
+                <span>管理员</span>
+              </div>
+            </div>
+          )}
+
           {/* 导航菜单 */}
-          <nav className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-1">
+          <nav className="flex-1 overflow-y-auto px-4 py-6">
+            <div className="space-y-2">
               {items.map((item) => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href.split("#")[0]);
                 return (
@@ -150,14 +164,19 @@ export function Sidebar({ role }: SidebarProps) {
                     key={item.href}
                     href={item.href}
                     onClick={() => setIsOpen(false)}
-                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                    className={`group flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                       isActive
-                        ? "bg-blue-50 text-blue-600"
-                        : "text-gray-700 hover:bg-gray-100"
+                        ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg scale-105"
+                        : "text-gray-300 hover:text-white hover:bg-gray-800 hover:scale-102"
                     }`}
                   >
-                    {item.icon}
+                    <div className={`flex-shrink-0 ${isActive ? "text-white" : "text-gray-400 group-hover:text-blue-400"}`}>
+                      {item.icon}
+                    </div>
                     <span className="font-medium">{item.name}</span>
+                    {isActive && (
+                      <div className="ml-auto w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    )}
                   </Link>
                 );
               })}
@@ -165,10 +184,18 @@ export function Sidebar({ role }: SidebarProps) {
           </nav>
 
           {/* 底部信息 */}
-          <div className="p-4 border-t border-gray-200">
-            <div className="text-xs text-gray-500">
-              <p>© 2025 DNS-Max</p>
-              <p className="mt-1">域名分发管理系统</p>
+          <div className="p-6 border-t border-gray-700 bg-gradient-to-b from-transparent to-gray-900">
+            <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-4 border border-gray-700">
+              <div className="text-xs text-gray-400 space-y-1">
+                <p className="font-semibold text-gray-300 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  © 2025 DNS-Max
+                </p>
+                <p>域名分发管理系统</p>
+                <p className="text-blue-400 font-medium">v2.0.0</p>
+              </div>
             </div>
           </div>
         </div>

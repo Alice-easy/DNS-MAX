@@ -10,9 +10,12 @@ RUN npm ci
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 # 设置环境变量供Next.js构建时使用
-ENV PUBLIC_API_URL=http://localhost:8000 \
+ENV NEXT_PUBLIC_API_URL=http://localhost:8000 \
+    PUBLIC_API_URL=http://localhost:8000 \
     PUBLIC_WEB_URL=http://localhost:3000 \
-    COOKIE_DOMAIN=localhost
+    COOKIE_DOMAIN="" \
+    COOKIE_SECURE="false" \
+    SKIP_ENV_VALIDATION=1
 RUN npm run build
 
 FROM node:20-alpine AS run

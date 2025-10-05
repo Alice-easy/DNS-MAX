@@ -4,6 +4,10 @@ import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
+// Force all pages to be dynamic
+export const dynamic = 'force-dynamic'
+export const dynamicParams = true
+
 export const metadata: Metadata = {
     title: '域名分发系统',
     description: '基于DNSPod的域名分发管理平台',
