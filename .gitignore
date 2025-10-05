@@ -111,7 +111,6 @@ ehthumbs.db
 Thumbs.db
 
 # Project specific
-api/app/migrations/versions/
 web/.next/
 web/out/
 
@@ -132,12 +131,9 @@ htmlcov/
 # pyenv
 .python-version
 
-# pipenv
-Pipfile.lock
+# Backup files
+*.backup
+README.md.backup
 
-# Poetry
-poetry.lock
-
-# ChatGPT files
-域名分发网站设计.html
-域名分发网站设计_files/
+# Archive (keep in repo but could be excluded if desired)
+# archive/
